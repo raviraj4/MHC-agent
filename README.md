@@ -145,13 +145,4 @@ MIT License - see LICENSE file for details
 ---
 
 **Note**: This application is designed for mental health support but is not a replacement for professional medical advice. Always consult qualified healthcare providers for mental health concerns.
-```
 
-This README provides comprehensive documentation covering:
-- **Technical stack** and architecture decisions
-- **Implementation details** for key features
-- **Setup instructions** for development and deployment
-- **Security considerations** and best practices
-- **Contributing guidelines** for team collaboration
-
-The format is GitHub-ready with proper markdown syntax, code blocks, and organized sections for easy navigation.
