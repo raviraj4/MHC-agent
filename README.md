@@ -62,17 +62,17 @@ backend/                # FastAPI application
 ## Setup & Installation
 
 ### Frontend Setup
-
+```
 # Install dependencies
-`npm install`
+npm install
 
 # Environment configuration
-`cp .env.example .env.local`
+cp .env.example .env.local
 # Add your Supabase credentials
 
 # Development server
-`npm run dev`
-
+npm run dev
+```
 
 ### Backend Setup
 ```
@@ -88,7 +88,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-## 🛠️ Development Features
+##  Development Features
 
 ### Code Quality
 - **TypeScript**: Full type coverage
