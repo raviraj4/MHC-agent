@@ -1,0 +1,19 @@
+fastapi==0.104.1
+uvicorn==0.23.2
+pydantic==2.11.9
+scikit-learn==1.7.2
+fastapi-cli==0.0.13
+
+# Minimal production requirements.txt
+fastapi==0.104.1 # version checked
+uvicorn[standard]==0.32.0
+supabase==2.4.0
+openai==1.63.0
+langchain==0.3.17
+langchain-openai==0.2.11
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.9
+python-dotenv==1.0.1
+pydantic==2.11.9 # version checked
+scikit-learn==1.7.2 # version checked
+fastapi-cli==0.0.13 # version checked
