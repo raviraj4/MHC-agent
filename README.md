@@ -18,7 +18,7 @@ A full-stack mental health companion application featuring AI-powered emotional 
 - **OpenAI API** - LLM integration for mental health support
 
 ## Architecture/File structure MetaData
-
+```
 frontend/                 # Next.js application
 ├── app/                 # App Router directory
 │   ├── auth/           # Authentication pages
@@ -36,7 +36,7 @@ backend/                # FastAPI application
 ├── app/               # FastAPI application code
 ├── agents/            # AI agent implementations
 └── requirements.txt   # Python dependencies
-
+```
 ## 🔐 Authentication System
 
 ### Features
