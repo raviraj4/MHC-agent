@@ -37,7 +37,7 @@ backend/                # FastAPI application
 ├── agents/            # AI agent implementations
 └── requirements.txt   # Python dependencies
 ```
-## 🔐 Authentication System
+## Authentication System
 
 ### Features
 - **Multi-provider Auth**: Email/password + Google OAuth
@@ -45,30 +45,7 @@ backend/                # FastAPI application
 - **Protected Routes**: Middleware-based route protection
 - **Password Validation**: Real-time strength validation with visual feedback
 
-## 🎨 Theme System
-
-### Custom Beige Color Palette
-- **Light Mode**: Soft beige background (`#f8f4f0`) with warm accents
-- **Dark Mode**: Dark beige/charcoal (`#2a2623`) with amber highlights
-- **OKLCH Colors**: Modern, perceptually uniform color space
-- **Smooth Transitions**: 200ms transition duration for all theme changes
-
-### Theme Configuration
-Utilises the v4 tailwindcss
-@import "tailwindcss";
-
-@theme {
-  /* Custom beige color scale */
-  --color-beige-50: oklch(0.98 0.01 85);
-  --color-beige-100: oklch(0.95 0.02 85);
-  --color-beige-200: oklch(0.90 0.03 85);
-  /* ... complete scale to 900 */
-  
-  /* Dark mode variants */
-  --color-beige-950: oklch(0.15 0.02 85);
-}
-
-## 📱 UI/UX Features
+##  UI/UX Features
 
 ### Authentication Forms
 - **Real-time Validation**: Password strength indicators
@@ -82,7 +59,7 @@ Utilises the v4 tailwindcss
 - **Dark/Light Mode**: System preference with manual override
 - **Accessibility**: WCAG compliant contrast ratios
 
-## 🔧 Setup & Installation
+## Setup & Installation
 
 ### Frontend Setup
 
@@ -123,7 +100,7 @@ uvicorn main:app --reload
 - **Image Optimization**: Automatic WebP conversion
 - **Code Splitting**: Dynamic imports for optimal loading
 
-## 📦 Deployment
+## Deployment
 
 ### Frontend (Vercel)
 ```bash
@@ -153,7 +130,7 @@ railway deploy
 - **Crisis Detection**: Automated support resource suggestions
 - **Privacy First**: No persistent conversation storage without consent
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details
 
