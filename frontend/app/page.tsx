@@ -4,10 +4,14 @@ import PublicLayout from '@/components/layouts/PublicLayout'
 import Link from 'next/link'
 
 export default async function Home() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+const supabase = await createClient()
+const { data: { user }, error } = await supabase.auth.getUser()
 
-  if (session) {
+  if (!user || error) {
+  redirect('/auth/login')
+  }
+
+  if (user) {
     redirect('/chat')
   }
 

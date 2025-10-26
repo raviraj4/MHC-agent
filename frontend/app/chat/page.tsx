@@ -1,3 +1,4 @@
+
 import { createClient } from '../../utils/supabase/server'
 import { redirect } from 'next/navigation'
 // import { logout } from '../auth/actions'
@@ -5,15 +6,15 @@ import { redirect } from 'next/navigation'
 import AppLayout from '@/components/layouts/AppLayout'
 
 export default async function ChatPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+const supabase = await createClient()
+const { data: { user }, error } = await supabase.auth.getUser()
 
-  if (!session) {
-    redirect('/auth/login')
-  }
+if (!user || error) {
+  redirect('/auth/login')
+}
 
   return (
-    <AppLayout userEmail={session.user.email!}>
+    <AppLayout userEmail={user.email!}>
       {/* Chat Interface */}
       <div className="h-full flex flex-col p-6">
         <div className="flex-1 flex items-center justify-center">
@@ -24,6 +25,10 @@ export default async function ChatPage() {
             <p className="text-gray-600 dark:text-gray-300">
               Chat interface coming soon...
             </p>
+          {/*   */}
+
+
+
           </div>
         </div>
       </div>

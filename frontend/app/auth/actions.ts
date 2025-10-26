@@ -3,8 +3,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
+export async function login(_prevState: { error: boolean; message: string },
+  formData: FormData) {
+
+const supabase = await createClient()
 
   const data = {
     email: formData.get('email') as string,
@@ -23,15 +25,18 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    const errorMessages: { [key: string]: string } = {
-      'Invalid login credentials': 'Invalid email or password',
-      'Email not confirmed': 'Please confirm your email address before logging in',
-    }
+    // const errorMessages: { [key: string]: string } = {
+    //   'Invalid login credentials': 'Invalid email or password',
+    //   'Email not confirmed': 'Please confirm your email address before logging in',
+    // }
     
-    return { error: errorMessages[error.message] || 'Authentication failed' }
+    return { error: true, message: 'authentication failed! (check password/email) ' }
   }
-
   redirect('/chat')
+  return {error: false, message: 'successfully signed in user! '}
+
+  
+
 }
 
 export async function signup(formData: FormData) {

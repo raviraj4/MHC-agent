@@ -9,14 +9,14 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+const supabase = await createClient()
+const { data: { user }, error } = await supabase.auth.getUser()
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
         <ThemeProvider defaultTheme="system">
-          <AuthProvider session={session}>
+          <AuthProvider user={user}>
             {children}
             <Toaster 
               position="top-center"
