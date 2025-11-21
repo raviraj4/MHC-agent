@@ -39,7 +39,7 @@ export default function LoginPage() {
             name="email" 
             type="email" 
             required 
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
 
@@ -80,7 +80,7 @@ export default function LoginPage() {
 
         <button 
           formAction={formAction}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="w-full bg-yellow-700/80 text-white py-2 px-4 rounded-md hover:bg-yellow-800/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         
         >
           Log in (User)
@@ -92,7 +92,7 @@ export default function LoginPage() {
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           Don&apos;t have a member account?{' '}
         </p>
-          <a href="/auth/signup" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+          <a href="/auth/signup" className="text-yellow-600  hover:text-yellow-700 dark:text-yellow-600">
             Sign up as a Member!
           </a>
 </div>
@@ -102,7 +102,7 @@ export default function LoginPage() {
           
           
         </p>
-          <a href="" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+          <a href="" className="text-yellow-600  hover:text-yellow-700 dark:text-yellow-600">
             Sign Up as a Pro!
           </a>
 

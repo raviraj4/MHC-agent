@@ -63,11 +63,14 @@ backend/                # FastAPI application
 
 ### Frontend Setup
 ```
+cd frontend
 # Install dependencies
 npm install
 
-# Environment configuration
-cp .env.example .env.local
+# Environment configuration (create a .env file) and add:
+NEXT_PUBLIC_SUPABASE_URL=urlhere
+NEXT_PUBLIC_SUPABASE_ANON_KEY=anonkeyhere
+
 # Add your Supabase credentials
 
 # Development server
@@ -78,14 +81,14 @@ npm run dev
 ```
 # Python environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
+source venv/bin/activate  # (gitbash cmd) Linux/Mac
 venv\Scripts\activate     # Windows
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Start FastAPI server
-uvicorn main:app --reload
+uvicorn backend.app.main:app --reload (given your current path is 'MHC-agent/')
 ```
 
 ##  Development Features
