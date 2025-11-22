@@ -201,14 +201,13 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
     await send();
   };
 
+ // ...existing code...
   // Health offline / unknown UI (minimal)
   if (isConnected === false) {
     return (
-      <div className="p-6">
-        <div className="mb-4 text-red-600 font-medium">
-          AI Service Unavailable
-        </div>
-        <div className="text-sm text-gray-600">
+      <div className="p-6 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-[200px] rounded-md shadow-sm border border-gray-100 dark:border-slate-800">
+        <div className="mb-4 text-red-600 font-medium">AI Service Unavailable</div>
+        <div className="text-sm text-slate-600 dark:text-slate-400">
           Ensure backend and Ollama are running. Check server logs and /health.
         </div>
       </div>
@@ -217,65 +216,68 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
 
   if (isConnected === null) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse text-gray-600">Checking AI service…</div>
+      <div className="p-6 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-[200px] rounded-md shadow-sm border border-gray-100 dark:border-slate-800">
+        <div className="animate-pulse text-slate-600 dark:text-slate-400">Checking AI service…</div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-auto p-4">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+      <div className="flex-1 overflow-auto p-4 space-y-3">
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`mb-3 ${m.role === "user" ? "text-right" : "text-left"}`}
+            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div className="inline-block px-4 py-3 rounded-2xl text-slate-700 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/50 shadow-sm">
-  <div>
-    <div className="text-base leading-relaxed">
-      {m.content}
-    </div>
-    <p className="text-sm text-blue-500/70 mt-2">@{m.role}, {m.timestamp}</p>
-  </div>
-</div>
-            {m.status === "sending" && (
-              <div className="text-xs text-gray-500">sending…</div>
-            )}
-            {m.status === "error" && (
-              <div className="text-xs text-red-600">
-                failed.{" "}
-                <button onClick={() => retry(m.id)} className="underline">
-                  retry
-                </button>
+            <div
+              className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-sm
+                ${m.role === "user"
+                  ? "bg-amber-500 text-white dark:bg-amber-500"
+                  : "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"}
+              `}
+            >
+              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                {m.content}
               </div>
-            )}
+              <div className="mt-2 text-xs opacity-70 text-slate-100 dark:text-white">
+                @{m.role} · {new Date(m.timestamp).toLocaleString()}
+              </div>
+            </div>
           </div>
         ))}
         <div ref={scrollRef} />
       </div>
 
-      <div className="p-4 border-t">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="w-full p-3 rounded-md text-black bg-gray-100"
-          rows={1}
-          disabled={isLoading}
-        />
-        <div className="mt-2 flex justify-end">
-          <button
-            onClick={send}
+      <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="w-full resize-none min-h-[44px] max-h-[200px] p-3 rounded-lg bg-gray-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-gray-100 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            rows={1}
             disabled={isLoading}
-            className="bg-amber-400 hover:bg-amber-500 px-4 py-2 rounded"
-          >
-            {isLoading ? "Sending..." : "Send"}
-          </button>
+          />
+          <div className="mt-3 flex items-center justify-between">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              {isLoading ? "Sending..." : "Press Enter to send, Shift+Enter for newline"}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={send}
+                disabled={isLoading}
+                className="inline-flex items-center px-4 py-2 rounded-full bg-amber-400 hover:bg-amber-500 disabled:opacity-60 text-white shadow-sm"
+              >
+                {isLoading ? "Sending..." : "Send"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
+// ...existing code...
 }
