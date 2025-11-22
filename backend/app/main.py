@@ -39,7 +39,7 @@ SQLModel.metadata.create_all(engine)
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(payload: ChatRequest):
     conv_id = payload.conversation_id or "conv_local_default"
-    prompt_text = "\n".join({"role": m.role, "content": m.content} for m in payload.messages)
+    prompt_text = "\n".join([m.content for m in payload.messages])
     ollama_payload = {
         "model": MODEL,
         # "messages": [
@@ -48,6 +48,7 @@ async def chat_endpoint(payload: ChatRequest):
         "prompt": prompt_text ,
         "stream": False
     }
+    print("Sending to ollama: ", ollama_payload)
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         try:
@@ -60,11 +61,12 @@ async def chat_endpoint(payload: ChatRequest):
         raise HTTPException(status_code=500, detail=f"Ollama error {r.status_code}: {r.text}")
     
     resp_json = r.json()
+    print("Ollama response: ", resp_json)
     
-    assistant = resp_json.get("message", {"role": "assistant", "content": "" })
+    assistant_content = resp_json.get("response", "")  # /generate uses "response" field
     assistant_msg = ChatMessage(
-        role=assistant.get("role", "assistant"),
-        content=assistant.get("content", ""),
+        role="assistant",
+        content=assistant_content,
         conversation_id=conv_id
     )
     
