@@ -6,108 +6,101 @@ import { login } from '../actions'
 const initialState = { error: false, message: '' }
 
 export default function LoginPage() {
-    const [state, formAction] = useActionState(login, initialState)
+  const [state, formAction] = useActionState(login, initialState)
   const [showPassword, setShowPassword] = useState(false)
-  const [passwordTouched, setPasswordTouched] = useState(false)
- 
+
   const togglePasswordVisibility = () => {
     setShowPassword(true)
     setTimeout(() => setShowPassword(false), 1000)
   }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <form className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">User Login</h1>
-        
-
-
-        <div className="relative mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+    <div className="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] px-4 py-12">
+      <div className="pointer-events-none absolute inset-0 opacity-60 blur-3xl" aria-hidden>
+        <div className="mx-auto h-full max-w-3xl bg-gradient-to-r from-[#3b82f6]/20 via-[#06b6d4]/20 to-transparent" />
+      </div>
+      <div className="relative mx-auto w-full max-w-md">
+        <form className="space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--card)]/95 p-8 shadow-2xl backdrop-blur">
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#38bdf8]">
+              Welcome back
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold">User Login</h1>
+            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+              Sign in to continue your conversation with Asa.
+            </p>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">continue with email</span>
+
+          <div className="relative text-center text-xs text-[var(--muted-foreground)]">
+            <span className="bg-[var(--card)] px-3 uppercase tracking-[0.3em]">continue with email</span>
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--border)]" aria-hidden />
           </div>
-        </div>
 
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Email:
-          </label>
-          <input 
-            id="email" 
-            name="email" 
-            type="email" 
-            required 
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+            />
+          </div>
 
-        <div className="mb-6">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Password:
-          </label>
-          <div className="relative">
-
-
-          <input 
-            id="password" 
-            name="password" 
-           type={showPassword ? "text" : "password"} 
- 
-              onBlur={() => setPasswordTouched(true)}
-            required 
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors duration-200 pr-10"
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium">Password</label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 pr-12 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
               />
-                      <button
-              type="button"
-              onClick={togglePasswordVisibility}
-             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors duration-200"
-            >
-              {showPassword ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-3 flex items-center text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              >
+                {showPassword ? (
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <button 
-          formAction={formAction}
-          className="w-full bg-yellow-700/80 text-white py-2 px-4 rounded-md hover:bg-yellow-800/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        
-        >
-          Log in (User)
-        </button>
-  {state.error && <p className="text-red-500">{state.message}</p>}
-  {!state.error && state.message && <p className="text-green-500">{state.message}</p>}
-<div className='mt-8 text-center text-sm'>
+          <button
+            formAction={formAction}
+            className="w-full rounded-full bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:opacity-95"
+          >
+            Log in (User)
+          </button>
 
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Don&apos;t have a member account?{' '}
-        </p>
-          <a href="/auth/signup" className="text-yellow-600  hover:text-yellow-700 dark:text-yellow-600">
-            Sign up as a Member!
-          </a>
-</div>
-<div className='mt-8 text-center text-sm'>
-        <p className=" text-gray-600 dark:text-gray-400">
-          Registered mental health pro?{' '}
-          
-          
-        </p>
-          <a href="" className="text-yellow-600  hover:text-yellow-700 dark:text-yellow-600">
-            Sign Up as a Pro!
-          </a>
+          {state.error && <p className="text-sm text-red-500">{state.message}</p>}
+          {!state.error && state.message && <p className="text-sm text-emerald-500">{state.message}</p>}
 
-</div>
-      </form>
+          <div className="space-y-2 text-center text-sm text-[var(--muted-foreground)]">
+            <p>Don&apos;t have a member account?</p>
+            <a href="/auth/signup" className="font-semibold text-[#38bdf8] hover:text-[#0ea5e9]">
+              Sign up as a Member
+            </a>
+          </div>
+
+          <div className="space-y-2 text-center text-sm text-[var(--muted-foreground)]">
+            <p>Registered mental health pro?</p>
+            <a href="#" className="font-semibold text-[#38bdf8] hover:text-[#0ea5e9]">
+              Sign up as a Pro
+            </a>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

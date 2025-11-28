@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 // import { logout } from '../auth/actions'
 // import ThemeToggle from '@/components/ui/ThemeToggle'
 import AppLayout from '@/components/layouts/AppLayout'
-import ChatInterface from './ChatInterface'
 import AsaChatInterface from './AsaChatInterface'
 
 export default async function ChatPage() {
@@ -13,6 +12,16 @@ const { data: { user }, error } = await supabase.auth.getUser()
 
 if (!user || error) {
   redirect('/auth/login')
+}
+
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('onboarding_completed')
+  .eq('id', user.id)
+  .maybeSingle()
+
+if (!profile?.onboarding_completed) {
+  redirect('/start-conversation')
 }
 
   return (

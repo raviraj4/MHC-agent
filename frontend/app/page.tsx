@@ -4,15 +4,24 @@ import PublicLayout from '@/components/layouts/PublicLayout'
 import Link from 'next/link'
 
 export default async function Home() {
-const supabase = await createClient()
-const { data: { user }, error } = await supabase.auth.getUser()
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
 
-  if (!user || error) {
-  redirect('/auth/login')
-  }
+  if (user && !error) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle()
 
-  if (user) {
-    redirect('/chat')
+    if (!profile?.onboarding_completed) {
+      redirect('/start-conversation')
+    }
+
+    redirect('/dashboard')
   }
 
   return (

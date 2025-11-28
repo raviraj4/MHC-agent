@@ -57,13 +57,12 @@ export default function SignupPage() {
       } else if (result.success) {
         toast.success('Registration Successful', {
           description: result.message,
-          duration: 5000,
+          duration: 4000,
         })
         
-        // Redirect to login after successful signup
         setTimeout(() => {
-          router.push('/auth/login')
-        }, 2000)
+          router.push('/start-conversation')
+        }, 1500)
       }
     } catch (error) {
       toast.error('Unexpected Error', {
@@ -76,49 +75,57 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <form action={handleSubmit} className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-96 transition-colors duration-200">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-          Create Account
-        </h1>
+    <div className="relative min-h-screen bg-[var(--background)] px-4 py-12 text-[var(--foreground)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-r from-[#3b82f6]/30 via-transparent to-[#06b6d4]/30 blur-3xl" aria-hidden />
+      <form
+        action={handleSubmit}
+        className="relative mx-auto w-full max-w-xl space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--card)]/95 p-8 shadow-2xl backdrop-blur"
+      >
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#38bdf8]">Join Asa</p>
+          <h1 className="mt-2 text-3xl font-semibold">Create Account</h1>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            Tell us about yourself so Asa can tailor every check-in.
+          </p>
+        </div>
 
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium">
             Email Address
           </label>
-          <input 
-            id="email" 
-            name="email" 
-            type="email" 
-            required 
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
             placeholder="Enter your email"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors duration-200"
+            className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
             disabled={isSubmitting}
           />
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-sm font-medium">
             Password
           </label>
           <div className="relative">
-            <input 
-              id="password" 
-              name="password" 
-              type={showPassword ? "text" : "password"}
-              required 
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setPasswordTouched(true)}
               placeholder="Create a strong password"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors duration-200 pr-10"
+              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 pr-12 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
               disabled={isSubmitting}
             />
             <button
               type="button"
               onClick={togglePasswordVisibility}
               disabled={isSubmitting}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors duration-200"
+              className="absolute inset-y-0 right-3 flex items-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50"
             >
               {showPassword ? (
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -136,51 +143,36 @@ export default function SignupPage() {
           {/* Password Strength Indicator */}
           {shouldShowValidation && (
             <div className="mt-3 space-y-2 text-sm">
-              <div className={`flex items-center ${validations.minLength ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${validations.minLength ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                At least 8 characters
-              </div>
-              <div className={`flex items-center ${validations.hasUpperCase ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${validations.hasUpperCase ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                One uppercase letter
-              </div>
-              <div className={`flex items-center ${validations.hasLowerCase ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${validations.hasLowerCase ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                One lowercase letter
-              </div>
-              <div className={`flex items-center ${validations.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${validations.hasNumber ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                One number
-              </div>
-              <div className={`flex items-center ${validations.hasSpecialChar ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${validations.hasSpecialChar ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                One special character
-              </div>
+              <ValidationLine label="At least 8 characters" isValid={validations.minLength} />
+              <ValidationLine label="One uppercase letter" isValid={validations.hasUpperCase} />
+              <ValidationLine label="One lowercase letter" isValid={validations.hasLowerCase} />
+              <ValidationLine label="One number" isValid={validations.hasNumber} />
+              <ValidationLine label="One special character" isValid={validations.hasSpecialChar} />
             </div>
           )}
         </div>
 
-        <div className="mb-6">
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="space-y-2">
+          <label htmlFor="confirmPassword" className="text-sm font-medium">
             Confirm Password
           </label>
           <div className="relative">
             <input 
               id="confirmPassword" 
               name="confirmPassword" 
-              type={showConfirmPassword ? "text" : "password"}
+              type={showConfirmPassword ? 'text' : 'password'}
               required 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your password"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors duration-200 pr-10"
+              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 pr-12 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
               disabled={isSubmitting}
             />
             <button
               type="button"
               onClick={toggleConfirmPasswordVisibility}
               disabled={isSubmitting}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors duration-200"
+              className="absolute inset-y-0 right-3 flex items-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50"
             >
               {showConfirmPassword ? (
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,8 +189,8 @@ export default function SignupPage() {
           
           {/* Password Match Indicator */}
           {confirmPassword.length > 0 && (
-            <div className={`mt-2 flex items-center text-sm ${validations.passwordsMatch ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              <div className={`w-2 h-2 rounded-full mr-2 ${validations.passwordsMatch ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className={`mt-2 flex items-center text-sm ${validations.passwordsMatch ? 'text-emerald-500' : 'text-rose-500'}`}>
+              <div className={`mr-2 h-2 w-2 rounded-full ${validations.passwordsMatch ? 'bg-emerald-500' : 'bg-rose-500'}`} />
               {validations.passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
             </div>
           )}
@@ -207,7 +199,7 @@ export default function SignupPage() {
         <button 
           type="submit"
           disabled={!isPasswordValid || isSubmitting}
-          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+          className="w-full rounded-full bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <div className="flex items-center justify-center">
@@ -219,16 +211,25 @@ export default function SignupPage() {
           )}
         </button>
 
-        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p className="pt-2 text-center text-sm text-[var(--muted-foreground)]">
           Already have an account?{' '}
           <a 
             href="/auth/login" 
-            className="text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium transition-colors duration-200"
+            className="font-semibold text-[#38bdf8] hover:text-[#0ea5e9]"
           >
             Sign in
           </a>
         </p>
       </form>
+    </div>
+  )
+}
+
+function ValidationLine({ label, isValid }: { label: string; isValid: boolean }) {
+  return (
+    <div className={`flex items-center ${isValid ? 'text-emerald-500' : 'text-rose-500'}`}>
+      <div className={`mr-2 h-2 w-2 rounded-full ${isValid ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+      {label}
     </div>
   )
 }

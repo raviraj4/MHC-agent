@@ -43,14 +43,20 @@ export interface Conversation {
 }
 
 // Database Types (matching your Supabase schema)
+export interface ProfilePreferences {
+  goals?: string[]
+  activities?: string[]
+}
+
 export interface Profile {
   id: string
-  first_name?: string
-  last_name?: string
-  preferred_name?: string
-  avatar_id?: string
-  created_at: string
-  updated_at: string
+  email?: string
+  full_name?: string
+  user_name?: string
+  onboarding_completed?: boolean
+  preferences?: ProfilePreferences | null
+  created_at?: string
+  updated_at?: string
 }
 
 export interface AvatarOption {

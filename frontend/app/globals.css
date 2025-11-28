@@ -1,24 +1,147 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-size: 16px;
+  --font-sans: var(--font-manrope), 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --background: #f5f9fb;
+  --foreground: #2d3142;
+  --card: #ffffff;
+  --card-foreground: #2d3142;
+  --popover: #ffffff;
+  --popover-foreground: #2d3142;
+  --primary: #a8dce8;
+  --primary-foreground: #1a4d5c;
+  --secondary: #c1b8f3;
+  --secondary-foreground: #3d2d6b;
+  --muted: #eff6f9;
+  --muted-foreground: #6b7280;
+  --accent: #e8f3f7;
+  --accent-foreground: #2d3142;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(168, 220, 232, 0.3);
+  --input: transparent;
+  --input-background: #f8fbfd;
+  --switch-background: #d6edf3;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #a8dce8;
+  --chart-1: #a8dce8;
+  --chart-2: #c1b8f3;
+  --chart-3: #b8e6ef;
+  --chart-4: #d4c8f7;
+  --chart-5: #8ecfe0;
+  --radius: 0.625rem;
+  --sidebar: #fafcfd;
+  --sidebar-foreground: #2d3142;
+  --sidebar-primary: #a8dce8;
+  --sidebar-primary-foreground: #1a4d5c;
+  --sidebar-accent: #eff6f9;
+  --sidebar-accent-foreground: #2d3142;
+  --sidebar-border: rgba(168, 220, 232, 0.25);
+  --sidebar-ring: #a8dce8;
 }
 
-@custom-media --dark (prefers-color-scheme: dark);
-@custom-media --dark (selector(.dark));
+.dark {
+  --background: #1a1b26;
+  --foreground: #f0f2f8;
+  --card: #222330;
+  --card-foreground: #f0f2f8;
+  --popover: #222330;
+  --popover-foreground: #f0f2f8;
+  --primary: #b5a5d8;
+  --primary-foreground: #1a1b26;
+  --secondary: #7ba0c1;
+  --secondary-foreground: #f0f2f8;
+  --muted: #2d3142;
+  --muted-foreground: #9ca3af;
+  --accent: #2d3142;
+  --accent-foreground: #f0f2f8;
+  --destructive: #ef4444;
+  --destructive-foreground: #f0f2f8;
+  --border: rgba(181, 165, 216, 0.2);
+  --input: rgba(181, 165, 216, 0.2);
+  --ring: #b5a5d8;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: #b5a5d8;
+  --chart-2: #7ba0c1;
+  --chart-3: #c4b5e3;
+  --chart-4: #6891b3;
+  --chart-5: #a89ac9;
+  --sidebar: #1a1b26;
+  --sidebar-foreground: #f0f2f8;
+  --sidebar-primary: #b5a5d8;
+  --sidebar-primary-foreground: #1a1b26;
+  --sidebar-accent: #2d3142;
+  --sidebar-accent-foreground: #f0f2f8;
+  --sidebar-border: rgba(181, 165, 216, 0.2);
+  --sidebar-ring: #b5a5d8;
+}
 
-:root:where(.dark) {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+*, *::before, *::after {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans, 'Inter', 'Segoe UI', system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
 }
 
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+:where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+
+html {
+  font-size: var(--font-size);
 }

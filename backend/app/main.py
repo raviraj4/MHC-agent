@@ -57,6 +57,7 @@ async def chat_endpoint(payload: ChatRequest):
         except Exception as e:
             raise HTTPException(status_code=500,detail=f"Error contacting Ollama - {MODEL}: {e}")
     
+    print("Ollama status:", r.status_code, "body:", r.text[:500])
     if r.status_code != 200:
         raise HTTPException(status_code=500, detail=f"Ollama error {r.status_code}: {r.text}")
     
