@@ -8,6 +8,7 @@ export interface OnboardingPayload {
   activities: string[]
 }
 
+
 export async function completeOnboarding(payload: OnboardingPayload) {
   const supabase = await createClient()
   const {

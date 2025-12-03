@@ -20,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 MODELS = {
     "G31" : "gemma3:1b",
     "G34" : "gemma3:4b-it-qat",
