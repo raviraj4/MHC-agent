@@ -23,12 +23,15 @@ const CHAT_URL = `${API_BASE}/api/chat`;
 const HEALTH_INTERVAL = 5000;
 const HEALTH_TIMEOUT = 2000;
 const FAILURES_TO_OFFLINE = 2;
+const MAX_CONTEXT_MESSAGES = 12; // send only latest turns to backend
 
-export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
+export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps) {
+  void _userId;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [hasCheckedHealth, setHasCheckedHealth] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   const failuresRef = useRef(0);
@@ -60,8 +63,7 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
         } else {
           const j = await res.json().catch(() => ({}));
           // Consider connected if backend responds ok OR json.ok === true OR ollama_running === true
-          const connected =
-            res.ok || j.ok === true || j.ollama_running === true;
+          const connected = j.ok === true || j.ollama_running === true;
           if (connected) failuresRef.current = 0;
           else failuresRef.current += 1;
         }
@@ -70,9 +72,12 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
       } finally {
         const nowOffline = failuresRef.current >= FAILURES_TO_OFFLINE;
         if (!mountedRef.current) return;
-        setIsConnected(
-          nowOffline ? false : failuresRef.current === 0 ? true : isConnected
-        );
+        setHasCheckedHealth(true);
+        setIsConnected((prev) => {
+          if (nowOffline) return false;
+          if (failuresRef.current === 0) return true;
+          return prev;
+        });
       }
     };
 
@@ -85,7 +90,6 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
     return () => {
       if (intervalId) window.clearInterval(intervalId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // scroll to bottom on messages change
@@ -132,8 +136,9 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
     setInput("");
 
     // prepare payload - map all messages (including current) to role/content
+    const recentContext = messages.slice(-MAX_CONTEXT_MESSAGES);
     const payloadMessages = [
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ...recentContext.map((m) => ({ role: m.role, content: m.content })),
       { role: userMsg.role, content: userMsg.content },
     ];
 
@@ -191,19 +196,8 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
     }
   };
 
-  const retry = async (id: string) => {
-    const msg = messages.find((m) => m.id === id);
-    if (!msg) return;
-    // set it to sending and resend only that message in context
-    updateMessageStatus(id, "sending");
-    setInput(msg.content);
-    // call send() which will append a duplicate user message; alternatively implement a resend path
-    await send();
-  };
-
- // ...existing code...
   // Health offline / unknown UI (minimal)
-  if (isConnected === false) {
+  if (hasCheckedHealth && isConnected === false) {
     return (
       <div className="p-6 bg-[var(--card)] text-[var(--foreground)] min-h-[200px] rounded-2xl shadow-sm border border-[var(--border)]">
         <div className="mb-2 text-[var(--destructive)] font-medium">AI Service Unavailable</div>
@@ -214,7 +208,7 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
     );
   }
 
-  if (isConnected === null) {
+  if (!hasCheckedHealth) {
     return (
       <div className="p-6 bg-[var(--card)] text-[var(--foreground)] min-h-[200px] rounded-2xl shadow-sm border border-[var(--border)]">
         <div className="animate-pulse text-[var(--muted-foreground)]">Checking AI service…</div>
@@ -257,7 +251,7 @@ export default function AsaChatInterface({ userId }: ChatInterfaceProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="w-full resize-none min-h-[44px] max-h-[200px] p-3 rounded-2xl bg-[var(--input-background)] text-[var(--foreground)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+            className="w-full resize-none min-h-[44px] max-h-[200px] p-3 rounded-2xl bg-[var(--input-background)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
             rows={1}
             disabled={isLoading}
           />
