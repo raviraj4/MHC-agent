@@ -5,37 +5,39 @@ A full-stack mental health companion application featuring AI-powered emotional 
 
 ## Tech Stack
 
-### Frontend
-- **Next.js 15** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS v4** - Modern utility-first CSS with custom theme
-- **Supabase** - Authentication & real-time database
+### Frontend (current)
+- **Next.js 15** - App Router UI
+- **TypeScript** - Type-safe components
+- **Tailwind CSS v4** - Tokenized theme system
+- **Supabase** - Auth + profile storage
 - **Sonner** - Toast notifications
 
-### Backend
-- **Python FastAPI** - High-performance API framework
-- **LangChain** - AI agent orchestration
-- **OpenAI API** - LLM integration for mental health support
+### Backend (current)
+- **Python FastAPI** - REST API + health checks
+- **Ollama (Gemma3 / Asa Modelfile)** - Local LLM runtime
+- **SQLite** - Lightweight persistence for conversations
+- **httpx + Pydantic** - Async client + schema validation
+
+### Future Enhancements (planned)
+- **LangChain orchestration** for multi-tool agent flows
+- **Managed LLM APIs** (OpenAI/Azure) as optional fallbacks when privacy budgets allow
+- **Cloud-native storage** (Postgres, vector DB) for team deployments
 
 ## Architecture/File structure MetaData
 ```
-frontend/                 # Next.js application
-├── app/                 # App Router directory
-│   ├── auth/           # Authentication pages
-│   ├── chat/           # Protected chat interface
-│   └── layout.tsx      # Root layout with providers
-├── components/         # React components
-│   ├── auth/          # Authentication components
-│   ├── layouts/       # App layout components
-│   ├── providers/     # Context providers
-│   └── ui/            # Reusable UI components
-└── lib/               # Utility libraries
-    └── supabase/      # Supabase client configuration
+frontend/
+├── app/                 # App Router routes (auth, chat, dashboard, journal)
+├── components/          # Layouts, onboarding flow, UI primitives
+├── providers/           # Theme + Auth contexts
+└── utils/supabase/      # Client/server helpers
 
-backend/                # FastAPI application
-├── app/               # FastAPI application code
-├── agents/            # AI agent implementations
-└── requirements.txt   # Python dependencies
+backend/
+├── app/
+│   ├── main.py          # FastAPI entry, /api/chat + /health
+│   └── models.py        # Pydantic request/response schemas
+├── modelfiles/
+│   └── asa-mental-health-coach/Modelfile  # Gemma3 persona + params
+└── requirements.txt
 ```
 ## Authentication System
 
@@ -79,18 +81,25 @@ npm run dev
 
 ### Backend Setup
 ```
-# Python environment
-python -m venv venv
-source venv/bin/activate  # (gitbash cmd) Linux/Mac
-venv\Scripts\activate     # Windows
+cd backend
 
-# Install dependencies
+# (Recommended) reuse the bundled virtual env name
+python -m venv myenv
+myenv\Scripts\activate    # Windows
+# source myenv/bin/activate # macOS/Linux
+
 pip install -r requirements.txt
 
-# Start FastAPI server
-uvicorn backend.app.main:app --reload (given your current path is 'MHC-agent/')
+# ensure Ollama is running with the asa Modelfile loaded
+uvicorn app.main:app --reload
 ```
 
+### One-click Dev Startup
+From repo root run:
+```
+powershell -ExecutionPolicy Bypass -File .\start.ps1
+```
+This opens two terminals: `npm run dev` (frontend) and `uvicorn app.main:app --reload` (backend).
 ##  Development Features
 
 ### Code Quality
@@ -127,11 +136,16 @@ railway deploy
 
 ## AI Integration
 
-### Mental Health Agent
-- **Context Awareness**: User-specific conversation history
-- **Emotional Intelligence**: Tone-appropriate responses
-- **Crisis Detection**: Automated support resource suggestions
-- **Privacy First**: No persistent conversation storage without consent
+### Mental Health Agent (current)
+- **Local-first models**: Asa Modelfile (Gemma3 base) served through Ollama—no cloud data leakage by default.
+- **Persona injection**: FastAPI adds system prompts + safety parameters before every `/api/chat` call.
+- **Context Awareness**: Trimmed conversation history persisted in SQLite + browser state.
+- **Crisis Detection**: Keyword/sentiment hooks surface SOS flow and therapist referrals.
+
+### Future AI Work
+- LangChain-based tool use (journaling summaries, grounding exercises)
+- Managed API failover for low-resource devices
+- Fine-tuned emotional classifiers + InitNet scheduling heuristics
 
 ## License
 

@@ -1,0 +1,39 @@
+flowchart TB
+    subgraph Frontend["Frontend Module (Next.js 15)"]
+        AUTH[Authentication Pages]
+        ONBOARD[Onboarding Flow]
+        CHAT[Chat Interface]
+        JOURNAL[Journal Module]
+        PROFILE[Profile Management]
+        DASH[Dashboard]
+    end
+
+    subgraph Backend["Backend Module (FastAPI)"]
+        API[REST API Endpoints]
+        HEALTH[Health Monitoring]
+        LLM_INT[LLM Integration Layer]
+    end
+
+    subgraph AI["AI Module (Ollama)"]
+        GEMMA[Gemma3 1B Model]
+        ASA[ASA Modelfile]
+    end
+
+    subgraph Database["Database Module (Supabase)"]
+        SB_AUTH[Supabase Auth]
+        PROFILES_TB[Profiles Table]
+        JOURNAL_TB[Journal Entries Table]
+        EMERGENCY_TB[Emergency Contacts Table]
+    end
+
+    AUTH --> SB_AUTH
+    ONBOARD --> PROFILES_TB
+    ONBOARD --> EMERGENCY_TB
+    CHAT --> API
+    API --> LLM_INT
+    LLM_INT --> GEMMA
+    GEMMA --> ASA
+    JOURNAL --> JOURNAL_TB
+    PROFILE --> PROFILES_TB
+    DASH --> CHAT
+    DASH --> JOURNAL

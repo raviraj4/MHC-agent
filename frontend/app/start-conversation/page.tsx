@@ -2,9 +2,18 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow'
 
+interface EmergencyContactPreference {
+  name?: string
+  relationship?: string
+  phone?: string
+  email?: string
+  consent?: boolean
+}
+
 interface Preferences {
   goals?: string[]
   activities?: string[]
+  emergencyContact?: EmergencyContactPreference
 }
 
 export default async function StartConversationPage() {
@@ -49,6 +58,7 @@ export default async function StartConversationPage() {
           initialName={profile?.full_name || profile?.user_name || ''}
           initialGoals={preferences?.goals || []}
           initialActivities={preferences?.activities || []}
+          initialEmergencyContact={preferences?.emergencyContact}
         />
       </div>
     </div>

@@ -24,6 +24,15 @@ const HEALTH_INTERVAL = 5000;
 const HEALTH_TIMEOUT = 2000;
 const FAILURES_TO_OFFLINE = 2;
 const MAX_CONTEXT_MESSAGES = 12; // send only latest turns to backend
+const ASSISTANT_AVATAR_URL = process.env.NEXT_PUBLIC_ASA_AVATAR_URL ?? "";
+const ASSISTANT_WELCOME_IMAGE_URL = process.env.NEXT_PUBLIC_ASA_WELCOME_IMAGE_URL ?? "";
+const DEMO_PROMPTS = [
+  "I am feeling anxious because...",
+  "I need motivation with...",
+  "I'm feeling overwhelmed by...",
+  "I'm grateful for...",
+  "I'm feeling stuck with...",
+];
 
 export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps) {
   void _userId;
@@ -117,6 +126,13 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
   };
 
   const appendMessage = (m: Message) => setMessages((prev) => [...prev, m]);
+  const handlePromptInsert = (prompt: string) => {
+    setInput((prev) => {
+      if (!prev) return prompt;
+      return prev.trimEnd().length === 0 ? prompt : `${prev.trimEnd()} ${prompt}`;
+    });
+    textareaRef.current?.focus();
+  };
 
   // send message to backend expecting { conversation_id?, messages: [{role,content}] }
   const send = async () => {
@@ -219,31 +235,100 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
   return (
     <div className="flex flex-col h-full bg-[var(--card)] text-[var(--foreground)]">
       <div className="flex-1 overflow-auto p-4 space-y-3">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-[80%] px-4 py-3 rounded-3xl shadow-sm border
-                ${m.role === "user"
-                  ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-transparent"
-                  : "bg-[var(--muted)] text-[var(--foreground)] border-[var(--border)]"}
-              `}
-            >
-              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                {m.content}
-              </div>
-              <div className="mt-2 text-xs text-[var(--muted-foreground)]">
-                @{m.role} · {new Date(m.timestamp).toLocaleString()}
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+ <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-100 bg-white/95 p-6 shadow-xl shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-black/50">
+              <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(220px,320px)] md:items-center">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
+                    Always here
+                  </p>
+                  <h3 className="text-2xl font-semibold text-slate-900 dark:text-white">Start a conversation</h3>
+                  <div className="mt-5 rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-5 py-4 text-base text-slate-800 shadow-inner dark:border-slate-800 dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-950 dark:text-slate-200">
+                    “Hello! I&apos;m ASA, your wellbeing companion. How are you feeling today? Always here to listen.”
+                  </div>
+                </div>
+                {ASSISTANT_WELCOME_IMAGE_URL && (
+                  <div className="relative flex w-full justify-center -mb-6">
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-6 bottom-0 h-24 rounded-full bg-gradient-to-r from-cyan-300/70 via-cyan-100/70 to-indigo-100/70 blur-3xl opacity-70 animate-pulse"
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ASSISTANT_WELCOME_IMAGE_URL}
+                      alt="Asa calming illustration"
+                      className="relative w-full max-w-xs object-contain"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        ))}
+        ) : (
+          <>
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex items-end gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                {m.role !== "user" && (
+                  <div className="flex-shrink-0 self-start">
+                    {ASSISTANT_AVATAR_URL ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={ASSISTANT_AVATAR_URL}
+                        alt="Asa AI avatar"
+                        className="h-10 w-10 rounded-full border border-slate-200 object-cover dark:border-slate-700"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-gradient-to-br from-sky-500 via-sky-600 to-cyan-500 text-xs font-semibold tracking-wider text-white shadow-sm dark:border-slate-700">
+                        ASA
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div
+                  className={`max-w-[80%] rounded-3xl border px-4 py-3 text-sm leading-relaxed shadow-sm transition-colors
+                    ${m.role === "user"
+                      ? "bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#14b8a6] text-white border-transparent shadow-lg shadow-sky-500/25"
+                      : "bg-slate-100 text-slate-900 border-slate-200 shadow-md dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"}
+                  `}
+                >
+                  <div className="whitespace-pre-wrap break-words">
+                    {m.content}
+                  </div>
+                  <div
+                    className={`mt-2 text-xs ${m.role === "user" ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}
+                  >
+                    @{m.role} · {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
         <div ref={scrollRef} />
       </div>
 
       <div className="p-4 border-t border-[var(--border)] bg-[var(--card)]">
+        <div className="mb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--muted-foreground)]">
+            Try a prompt
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {DEMO_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => handlePromptInsert(prompt)}
+                className="rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-sky-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="relative">
           <textarea
             ref={textareaRef}

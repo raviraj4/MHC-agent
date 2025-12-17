@@ -1,0 +1,20 @@
+flowchart LR
+    subgraph Architecture Decisions
+        A1[Local Ollama Runtime]
+        A2[Supabase RLS]
+        A3[Modular Codebase]
+        A4[Env-driven Config]
+    end
+
+    subgraph Sustainability Outcomes
+        B1[ Reduced Carbon Footprint]
+        B2[ User Data Ownership]
+        B3[ Inclusive Access]
+        B4[ Long-term Maintainability]
+    end
+
+    A1 --> B1
+    A2 --> B2
+    A3 --> B4
+    A4 --> B4
+    A2 --> B3

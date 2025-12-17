@@ -22,18 +22,30 @@ const supabase = await createClient()
     return { error: 'Please enter a valid email address' }
   }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { data: authData, error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    // const errorMessages: { [key: string]: string } = {
-    //   'Invalid login credentials': 'Invalid email or password',
-    //   'Email not confirmed': 'Please confirm your email address before logging in',
-    // }
-    
     return { error: true, message: 'authentication failed! (check password/email) ' }
   }
-  redirect('/chat')
-  return {error: false, message: 'successfully signed in user! '}
+
+  // Check if user has completed onboarding
+  if (authData.user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', authData.user.id)
+      .maybeSingle()
+
+    // Redirect to onboarding if profile doesn't exist or onboarding not completed
+    if (profile?.onboarding_completed === true) {
+      redirect('/dashboard')
+    } else {
+      redirect('/start-conversation')
+    }
+  }
+
+  redirect('/dashboard')
+  return { error: false, message: 'successfully signed in user! ' }
 
   
 

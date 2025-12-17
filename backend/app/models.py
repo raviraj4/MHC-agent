@@ -23,6 +23,15 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     model: dict
    
+class EmergencyContact(BaseModel):
+    id: Optional[str] = None
+    user_id: str
+    name: str
+    relationship: Optional[str] = None
+    phone: str
+    email: Optional[str] = None
+    consent: bool = False
+    is_primary: bool = True
    
 class Conversations(SQLModel):
      id: Optional[str] = Field(default=None, primary_key=True)

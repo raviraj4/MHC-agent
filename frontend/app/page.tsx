@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 export default async function Home() {
   const supabase = await createClient()
+  
   const {
     data: { user },
     error,
@@ -18,9 +19,8 @@ export default async function Home() {
       .maybeSingle()
 
     if (!profile?.onboarding_completed) {
-      redirect('/start-conversation')
+      redirect('/chat')
     }
-
     redirect('/dashboard')
   }
 

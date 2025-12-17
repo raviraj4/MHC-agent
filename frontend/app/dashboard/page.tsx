@@ -29,7 +29,7 @@ export default async function DashboardPage() {
 
   return (
     <AppLayout userEmail={user.email!}>
-      <section className="h-full overflow-y-auto bg-gray-50 px-4 py-10 dark:bg-gray-900">
+      <section className="h-full overflow-y-auto bg-[var(--muted)] px-4 py-10 dark:bg-[var(--background)]">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <div className="rounded-3xl m-4">
             {/* border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900 */}
@@ -65,16 +65,20 @@ export default async function DashboardPage() {
 
             <Link
               href="/journal"
-              className="rounded-3xl border border-[#3b82f6] bg-white p-6 shadow-sm transition hover:border-[#3b82f6] hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+              className="group relative overflow-hidden rounded-3xl border border-sky-200 bg-white/95 p-6 shadow-xl shadow-sky-100/80 ring-1 ring-sky-300/40 transition hover:-translate-y-[2px] hover:shadow-2xl dark:border-slate-700 dark:bg-slate-900/85 dark:shadow-2xl dark:shadow-black/50"
             >
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#00486c]">Reflection</p>
-              <h2 className="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">Journal entry</h2>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                Capture thoughts, wins, or challenges—you&apos;ll soon see guided prompts here.
-              </p>
-              <span className="mt-4 inline-flex items-center text-sm font-semibold text-[#00486c]">
-                Open journal →
-              </span>
+              <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-50 via-cyan-50/40 to-emerald-50 opacity-80 transition group-hover:opacity-95 dark:from-slate-900 dark:via-slate-900/40 dark:to-slate-950" />
+              <div className="relative">
+                <p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#0369a1] dark:text-sky-200">Reflection</p>
+                <h2 className="mt-3 text-2xl font-semibold text-[#0f172a] dark:text-white">Journal entry</h2>
+                <p className="mt-2 text-sm text-[#0f172a]/75 dark:text-slate-300">
+                  Capture thoughts, wins, or challenges—you&apos;ll soon see guided prompts here.
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0369a1] transition group-hover:translate-x-1 dark:text-sky-200">
+                  Open journal
+                  <span aria-hidden>→</span>
+                </span>
+              </div>
             </Link>
           </div>
         </div>

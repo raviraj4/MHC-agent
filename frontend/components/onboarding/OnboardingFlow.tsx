@@ -29,18 +29,30 @@ const STEP_LABELS = {
   1: "Welcome",
   2: "Wellbeing goals",
   3: "Activities",
-  4: "All set",
+  4: "Support contact",
+  5: "All set",
 } as const
+
+const TOTAL_STEPS = 5
 
 const highlightText = "text-[#38bdf8]"
 const gradientPrimary = "bg-gradient-to-r from-[#3b82f6] via-[#0284c7] to-[#06b6d4]"
 
-type Step = 0 | 1 | 2 | 3 | 4
+type Step = 0 | 1 | 2 | 3 | 4 | 5
+
+interface EmergencyContact {
+  name: string
+  relationship: string
+  phone: string
+  email: string
+  consent: boolean
+}
 
 interface OnboardingFlowProps {
   initialName?: string
   initialGoals?: string[]
   initialActivities?: string[]
+  initialEmergencyContact?: Partial<EmergencyContact>
 }
 
 const chipStyles = (
@@ -55,12 +67,20 @@ export function OnboardingFlow({
   initialName = "",
   initialGoals = [],
   initialActivities = [],
+  initialEmergencyContact = {},
 }: OnboardingFlowProps) {
   const router = useRouter()
   const [step, setStep] = useState<Step>(0)
   const [name, setName] = useState(initialName)
   const [goals, setGoals] = useState<string[]>(initialGoals)
   const [activities, setActivities] = useState<string[]>(initialActivities)
+  const [emergencyContact, setEmergencyContact] = useState<EmergencyContact>({
+    name: initialEmergencyContact.name || "",
+    relationship: initialEmergencyContact.relationship || "",
+    phone: initialEmergencyContact.phone || "",
+    email: initialEmergencyContact.email || "",
+    consent: initialEmergencyContact.consent ?? false,
+  })
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -69,9 +89,35 @@ export function OnboardingFlow({
       name: name.trim() || "Friend",
       goals,
       activities,
+      emergencyContact: {
+        name: emergencyContact.name.trim(),
+        relationship: emergencyContact.relationship.trim(),
+        phone: emergencyContact.phone.trim(),
+        email: emergencyContact.email.trim(),
+        consent: emergencyContact.consent,
+      },
     }),
-    [name, goals, activities],
+    [name, goals, activities, emergencyContact],
   )
+
+  const validateEmergencyContact = () => {
+    const trimmedName = emergencyContact.name.trim()
+    const trimmedPhone = emergencyContact.phone.trim()
+
+    if (!trimmedName || !trimmedPhone) {
+      setError("Please provide a name and phone number for your emergency contact.")
+      setStep(4)
+      return false
+    }
+
+    if (!emergencyContact.consent) {
+      setError("Please confirm you have permission to list this emergency contact.")
+      setStep(4)
+      return false
+    }
+
+    return true
+  }
 
   const toggleSelection = (item: string, list: string[], setter: Dispatch<SetStateAction<string[]>>) => {
     setter((prev) =>
@@ -91,7 +137,12 @@ export function OnboardingFlow({
     }
 
     setError(null)
-    setStep((prev) => Math.min(prev + 1, 4) as Step)
+    if (step === 4 && !validateEmergencyContact()) {
+      return
+    }
+
+    setError(null)
+    setStep((prev) => Math.min(prev + 1, TOTAL_STEPS) as Step)
   }
 
   const handleBack = () => {
@@ -107,11 +158,16 @@ export function OnboardingFlow({
       return
     }
 
+    if (!validateEmergencyContact()) {
+      return
+    }
+
     startTransition(async () => {
       const result = await completeOnboarding({
         name: name.trim(),
         goals,
         activities,
+        emergencyContact,
       })
 
       if (result?.error) {
@@ -129,7 +185,7 @@ export function OnboardingFlow({
         Step {step} · {STEP_LABELS[step as keyof typeof STEP_LABELS]}
       </div>
       <div>
-        {step}/4
+        {step}/{TOTAL_STEPS}
       </div>
     </div>
   )
@@ -238,11 +294,81 @@ export function OnboardingFlow({
     </div>
   )
 
-  const renderSummaryStep = () => (
+  const renderEmergencyContactStep = () => (
     <div className="space-y-6">
       {renderStepHeader()}
       <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
         <p className={`text-sm font-medium ${highlightText}`}>Step 4</p>
+        <h3 className="mt-2 text-2xl font-semibold">
+          Who should we reach out to in a crisis?
+        </h3>
+        <p className="mt-2 text-base text-[var(--muted-foreground)]">
+          This stays private and is only used if you ask Asa to escalate for safety support.
+        </p>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="text-sm font-medium">Full name</label>
+            <input
+              type="text"
+              value={emergencyContact.name}
+              onChange={(event) => setEmergencyContact((prev) => ({ ...prev, name: event.target.value }))}
+              placeholder="e.g. Jordan Smith"
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Relationship</label>
+            <input
+              type="text"
+              value={emergencyContact.relationship}
+              onChange={(event) => setEmergencyContact((prev) => ({ ...prev, relationship: event.target.value }))}
+              placeholder="Partner, sibling, therapist..."
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Phone number</label>
+            <input
+              type="tel"
+              value={emergencyContact.phone}
+              onChange={(event) => setEmergencyContact((prev) => ({ ...prev, phone: event.target.value }))}
+              placeholder="Include country code"
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Email (optional)</label>
+            <input
+              type="email"
+              value={emergencyContact.email}
+              onChange={(event) => setEmergencyContact((prev) => ({ ...prev, email: event.target.value }))}
+              placeholder="contact@example.com"
+              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+            />
+          </div>
+        </div>
+
+        <label className="mt-6 flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--muted)]/40 p-4 text-sm">
+          <input
+            type="checkbox"
+            checked={emergencyContact.consent}
+            onChange={(event) => setEmergencyContact((prev) => ({ ...prev, consent: event.target.checked }))}
+            className="mt-1 h-4 w-4 rounded border border-[var(--border)] text-[#38bdf8] focus:ring-[#38bdf8]"
+          />
+          <span className="text-[var(--muted-foreground)]">
+            I confirm this person knows they&apos;re my safety contact and consented to being contacted if needed.
+          </span>
+        </label>
+      </div>
+    </div>
+  )
+
+  const renderSummaryStep = () => (
+    <div className="space-y-6">
+      {renderStepHeader()}
+      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
+        <p className={`text-sm font-medium ${highlightText}`}>Step 5</p>
         <h3 className="mt-2 text-2xl font-semibold">
           All set, {summary.name}!
         </h3>
@@ -273,6 +399,36 @@ export function OnboardingFlow({
               ))}
             </div>
           </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)]/60 p-4">
+            <p className="text-sm font-medium text-[var(--muted-foreground)]">Emergency contact</p>
+            {summary.emergencyContact.name && summary.emergencyContact.phone ? (
+              <dl className="mt-3 space-y-1 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-[var(--muted-foreground)]">Name</dt>
+                  <dd>{summary.emergencyContact.name}</dd>
+                </div>
+                {summary.emergencyContact.relationship && (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-[var(--muted-foreground)]">Relationship</dt>
+                    <dd>{summary.emergencyContact.relationship}</dd>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <dt className="text-[var(--muted-foreground)]">Phone</dt>
+                  <dd>{summary.emergencyContact.phone}</dd>
+                </div>
+                {summary.emergencyContact.email && (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-[var(--muted-foreground)]">Email</dt>
+                    <dd>{summary.emergencyContact.email}</dd>
+                  </div>
+                )}
+              </dl>
+            ) : (
+              <p className="mt-3 text-sm text-[var(--muted-foreground)]">Not specified yet</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -288,11 +444,15 @@ export function OnboardingFlow({
       >
         Back
       </button>
-      {step < 4 ? (
+      {step < TOTAL_STEPS ? (
         <button
           type="button"
           onClick={handleContinue}
-          disabled={(step === 1 && !name.trim()) || isPending}
+          disabled={
+            (step === 1 && !name.trim()) ||
+            (step === 4 && (!emergencyContact.name.trim() || !emergencyContact.phone.trim() || !emergencyContact.consent)) ||
+            isPending
+          }
           className={`inline-flex items-center rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/10 hover:opacity-95 disabled:opacity-60 ${gradientPrimary}`}
         >
           Continue
@@ -316,7 +476,8 @@ export function OnboardingFlow({
       {step === 1 && renderNameStep()}
       {step === 2 && renderGoalsStep()}
       {step === 3 && renderActivitiesStep()}
-      {step === 4 && renderSummaryStep()}
+      {step === 4 && renderEmergencyContactStep()}
+      {step === 5 && renderSummaryStep()}
 
       {step > 0 && renderNavigation()}
 

@@ -58,7 +58,7 @@ export default function AppLayout({
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col bg-[var(--background)]">
           {/* Top Bar */}
-          <header className="border-b border-[var(--border)] bg-[color:var(--card)]/90 backdrop-blur">
+          <header className="border-b border-[var(--border)] bg-[color:var(--sidebar)]/90 backdrop-blur">
             <div className="flex justify-between items-center h-16 px-6">
               <div className="flex items-center gap-3">
                 <Image alt="Asa" width={64} height={32} src="/asa-blue.svg" />

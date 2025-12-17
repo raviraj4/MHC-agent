@@ -1,0 +1,11 @@
+flowchart TD
+    U(User) --> FE[Next.js Frontend]
+    FE --> SB[Supabase Auth]
+    SB --> FA[FastAPI Middleware]
+    FE --> FA
+    FA --> FE
+    FA --> DB[(SQLite Context Store)]
+    FA --> LLM[Ollama LLM Engine]
+    LLM --> FA
+    FA --> EC[[Emergency Contacts]]
+    FA --> TH[[Therapist / Clinician]]

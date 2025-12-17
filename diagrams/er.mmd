@@ -1,0 +1,69 @@
+erDiagram
+    auth_users ||--o{ profiles : "shares id"
+    profiles ||--o{ conversations : "1:N"
+    conversations ||--o{ messages : "1:N"
+    profiles ||--o{ emergency_contacts : "1:N"
+    conversations ||--o{ session_summaries : "0..1"
+    session_summaries }o--|| therapists : "optional share"
+
+    auth_users {
+        uuid id PK
+        text email
+        timestamptz created_at
+    }
+
+    profiles {
+        uuid id PK
+        text user_name
+        boolean onboarding_completed
+        jsonb preferences
+        timestamptz created_at
+        timestamptz updated_at
+        %% FK -> auth_users.id
+    }
+
+    conversations {
+        uuid id PK
+        uuid profile_id
+        text title
+        timestamptz started_at
+        timestamptz updated_at
+        %% FK -> profiles.id
+    }
+
+    messages {
+        uuid id PK
+        uuid conversation_id
+        text role
+        text content
+        timestamptz created_at
+        %% FK -> conversations.id
+    }
+
+    emergency_contacts {
+        uuid id PK
+        uuid profile_id
+        text name
+        text relation
+        text channel
+        text value
+        boolean verified
+        %% FK -> profiles.id
+    }
+
+    session_summaries {
+        uuid id PK
+        uuid conversation_id
+        text summary
+        text sentiment
+        boolean shared
+        timestamptz created_at
+        %% FK -> conversations.id
+    }
+
+    therapists {
+        uuid id PK
+        text name
+        text organization
+        text contact
+    }

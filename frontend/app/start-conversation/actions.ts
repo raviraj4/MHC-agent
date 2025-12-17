@@ -2,10 +2,19 @@
 
 import { createClient } from '@/utils/supabase/server'
 
+export interface EmergencyContactPayload {
+  name: string
+  relationship?: string
+  phone: string
+  email?: string
+  consent: boolean
+}
+
 export interface OnboardingPayload {
   name: string
   goals: string[]
   activities: string[]
+  emergencyContact: EmergencyContactPayload
 }
 
 
@@ -24,10 +33,22 @@ export async function completeOnboarding(payload: OnboardingPayload) {
     return { error: 'Please share what you would like us to call you.' }
   }
 
+  const trimmedContactName = payload.emergencyContact?.name?.trim()
+  const trimmedContactPhone = payload.emergencyContact?.phone?.trim()
+
+  if (!trimmedContactName || !trimmedContactPhone) {
+    return { error: 'Please provide a name and phone number for your emergency contact.' }
+  }
+
+  if (!payload.emergencyContact?.consent) {
+    return { error: 'Please confirm you have permission to list this emergency contact.' }
+  }
+
   const goals = Array.from(new Set(payload.goals || []))
   const activities = Array.from(new Set(payload.activities || []))
 
-  const { error } = await supabase.from('profiles').upsert(
+  // Update profile with preferences
+  const { error: profileError } = await supabase.from('profiles').upsert(
     {
       id: user.id,
       email: user.email,
@@ -43,8 +64,27 @@ export async function completeOnboarding(payload: OnboardingPayload) {
     { onConflict: 'id' },
   )
 
-  if (error) {
-    return { error: error.message }
+  if (profileError) {
+    return { error: profileError.message }
+  }
+
+  // Upsert emergency contact into dedicated table
+  const { error: contactError } = await supabase.from('emergency_contacts').upsert(
+    {
+      user_id: user.id,
+      name: trimmedContactName,
+      relationship: payload.emergencyContact?.relationship?.trim() || null,
+      phone: trimmedContactPhone,
+      email: payload.emergencyContact?.email?.trim() || null,
+      consent: true,
+      is_primary: true,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,phone' },
+  )
+
+  if (contactError) {
+    return { error: contactError.message }
   }
 
   return { success: true, name: trimmedName }

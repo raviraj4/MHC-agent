@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
@@ -21,7 +23,8 @@ MODELS = {
     "ASA" : "asa"
 }
 
-MODEL = MODELS["G31"]
+MODEL_KEY = os.getenv("OLLAMA_MODEL_KEY", "ASA").upper()
+MODEL = os.getenv("OLLAMA_MODEL", MODELS.get(MODEL_KEY, MODEL_KEY)).strip()
 
 ASA_SYSTEM_PROMPT = """
 You are Asa, a warm and compassionate mental-health companion inside the MHC app.
@@ -96,6 +99,9 @@ MODEL_PROFILES = {
     },
 }
 
+if MODEL not in MODEL_PROFILES:
+    MODEL_PROFILES[MODEL] = MODEL_PROFILES.get("asa", {}).copy()
+
 OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 OLLAMA_API_BASE = f"{OLLAMA_BASE_URL}/api"
 DATABASE_URL = "sqlite:///./local.db"
@@ -123,8 +129,6 @@ ollama_client = httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=120.0)
 @app.on_event("shutdown")
 async def _shutdown_client():
     await ollama_client.aclose()
-
-
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(payload: ChatRequest):
@@ -181,10 +185,22 @@ async def health():
         response = await ollama_client.get("/api/tags", timeout=2.0)
         response.raise_for_status()
         data = response.json()
+        available_models = data.get("models", [])
+        target_model_available = any(
+            MODEL in {m.get("name"), m.get("model")}
+            for m in available_models
+        )
         return {
             "ok": True,
             "ollama_running": True,
-            "models": [{"name": m.get("name"), "model": m.get("model")} for m in data.get("models", [])],
+            "models": [{"name": m.get("name"), "model": m.get("model")} for m in available_models],
+            "target_model": MODEL,
+            "target_model_available": target_model_available,
         }
     except Exception:
-        return {"ok": False, "ollama_running": False}
+        return {
+            "ok": False,
+            "ollama_running": False,
+            "target_model": MODEL,
+            "target_model_available": False,
+        }
