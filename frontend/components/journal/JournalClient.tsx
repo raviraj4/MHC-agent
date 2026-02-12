@@ -168,16 +168,16 @@ export function JournalClient() {
           </div>
         </div>
       )}
-      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur">
+      <header className="sticky top-0 z-10 bg-[var(--card)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-4 sm:px-6">
           <button
             onClick={() => (view === "new" ? setView("list") : router.push("/dashboard"))}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex-1">
-            <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted-foreground)]">Journal</p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Journal</p>
             <h2 className="text-lg font-semibold">Your private reflection space</h2>
           </div>
           {view === "list" && (
@@ -189,7 +189,7 @@ export function JournalClient() {
                 setSelectedMood(undefined);
                 setView("new");
               }}
-              className="inline-flex items-center rounded-full bg-[var(--primary)] px-5 py-2 text-sm font-medium text-[var(--primary-foreground)] shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] transition hover:opacity-90"
             >
               <Plus className="mr-2 h-4 w-4" />
               New Entry
@@ -200,34 +200,33 @@ export function JournalClient() {
 
       <div className="flex-1 overflow-y-auto">
         {view === "list" ? (
-          <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-          <section className="rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[color:var(--card)] to-[color:var(--muted)] p-6 text-[var(--foreground)] shadow-sm">
+          <main className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6">
+          <section className="rounded-2xl bg-[var(--card)] p-5 text-[var(--foreground)]">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[var(--card)] shadow">
-                <Lock className="h-5 w-5 text-[var(--primary)]" />
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--muted)]">
+                <Lock className="h-4 w-4 text-[var(--primary)]" />
               </div>
               <div>
-                <p className="font-medium">Your thoughts are safe here</p>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Entries stay on your device unless you choose to share them. Use this space to
-                  reflect, process emotions, and track your wellbeing journey.
+                <p className="font-medium text-sm">Your thoughts are safe here</p>
+                <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+                  Entries stay on your device unless you choose to share them.
                 </p>
               </div>
             </div>
           </section>
 
           <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search your journal..."
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-12 py-3 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/40"
+              className="w-full rounded-xl bg-[var(--card)] px-11 py-2.5 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/40"
             />
           </div>
 
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--muted-foreground)]">Prompts</h3>
+            <h3 className="text-xs font-medium text-[var(--muted-foreground)]">Prompts</h3>
             <div className="grid gap-3 md:grid-cols-3">
               {[ 
                 {
@@ -246,34 +245,34 @@ export function JournalClient() {
                 <button
                   key={prompt.title}
                   onClick={() => setView("new")}
-                  className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 text-left transition hover:border-[var(--ring)] hover:bg-[var(--muted)]"
+                  className="rounded-xl bg-[var(--card)] p-4 text-left transition hover:bg-[var(--muted)]"
                 >
-                  <p className="font-medium">{prompt.title}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">{prompt.subtitle}</p>
+                  <p className="font-medium text-sm">{prompt.title}</p>
+                  <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{prompt.subtitle}</p>
                 </button>
               ))}
             </div>
           </section>
 
-          <section className="space-y-4">
+          <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Recent Entries</h3>
-              <p className="text-sm text-[var(--muted-foreground)]">
+              <h3 className="text-sm font-semibold">Recent Entries</h3>
+              <p className="text-xs text-[var(--muted-foreground)]">
                 {filteredEntries.length} saved reflections
               </p>
             </div>
             {filteredEntries.map((entry) => (
               <article
                 key={entry.id}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm transition hover:shadow-md"
+                className="rounded-xl bg-[var(--card)] p-4 transition hover:bg-[var(--muted)]/50"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    {entry.mood && <span className="text-2xl leading-none">{entry.mood}</span>}
+                    {entry.mood && <span className="text-xl leading-none">{entry.mood}</span>}
                     <div>
-                      <p className="text-lg font-medium">{entry.title}</p>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                        <Calendar className="h-4 w-4" />
+                      <p className="text-sm font-medium">{entry.title}</p>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                        <Calendar className="h-3.5 w-3.5" />
                         <span>
                           {entry.date.toLocaleDateString("en-US", {
                             month: "short",
@@ -325,8 +324,8 @@ export function JournalClient() {
         </main>
       ) : (
         <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-          <section className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg">
-            <div className="space-y-6">
+          <section className="rounded-2xl bg-[var(--card)] p-6">
+            <div className="space-y-5">
               <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
                 <Calendar className="h-4 w-4" />
                 <span>
@@ -342,7 +341,7 @@ export function JournalClient() {
                 value={newTitle}
                 onChange={(event) => setNewTitle(event.target.value)}
                 placeholder="Entry title..."
-                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/40"
+                className="w-full rounded-xl bg-[var(--muted)] px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/40"
               />
 
               <div className="space-y-3">
@@ -358,10 +357,10 @@ export function JournalClient() {
                         onClick={() =>
                           setSelectedMood((prev) => (prev === emoji ? undefined : emoji))
                         }
-                        className={`relative flex h-14 w-14 items-center justify-center rounded-full border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 ${
+                        className={`relative flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 ${
                           isSelected
-                            ? "border-transparent bg-gradient-to-br from-sky-100 via-white to-sky-200 shadow-[0_12px_24px_rgba(14,165,233,0.35)] scale-110"
-                            : "border-transparent bg-[var(--muted)] hover:border-sky-200/80 hover:bg-[var(--muted)]/80"
+                            ? "bg-[var(--primary)]/10 ring-2 ring-[var(--primary)]/50 scale-105"
+                            : "bg-[var(--muted)] hover:bg-[var(--muted)]/80"
                         }`}
                       >
                         {isSelected && (
@@ -381,7 +380,7 @@ export function JournalClient() {
                   value={newContent}
                   onChange={(event) => setNewContent(event.target.value)}
                   placeholder="Write your thoughts... This is a safe space to express yourself freely."
-                  className="min-h-64 w-full resize-none rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/40"
+                  className="min-h-56 w-full resize-none rounded-xl bg-[var(--muted)] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/40"
                 />
                 <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
                   <Heart className="h-4 w-4" />
@@ -399,14 +398,14 @@ export function JournalClient() {
                     setEditingId(null);
                   }}
                   disabled={isSaving}
-                  className="flex-1 rounded-full border border-[var(--border)] px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm font-medium disabled:opacity-50 transition hover:bg-[var(--muted)]/80"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEntry}
                   disabled={isSaving || (!newTitle.trim() && !newContent.trim())}
-                  className="flex-1 rounded-full bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--primary-foreground)] shadow disabled:opacity-60"
+                  className="flex-1 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] disabled:opacity-60 transition hover:opacity-90"
                 >
                   {isSaving ? (
                     <span className="inline-flex items-center gap-2">

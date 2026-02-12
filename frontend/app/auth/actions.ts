@@ -3,6 +3,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
+const SIGNUP_COOLDOWN_MS = 60_000
+const signupAttemptByEmail = new Map<string, number>()
+
 export async function login(_prevState: { error: boolean; message: string },
   formData: FormData) {
 
@@ -72,21 +75,39 @@ export async function signup(formData: FormData) {
     return { error: 'Password must be at least 8 characters long' }
   }
 
+  const normalizedEmail = data.email.trim().toLowerCase()
+  const lastAttemptAt = signupAttemptByEmail.get(normalizedEmail)
+  const now = Date.now()
+
+  if (lastAttemptAt && now - lastAttemptAt < SIGNUP_COOLDOWN_MS) {
+    const waitSeconds = Math.ceil((SIGNUP_COOLDOWN_MS - (now - lastAttemptAt)) / 1000)
+    return {
+      error: `Please wait ${waitSeconds}s before requesting another verification email.`
+    }
+  }
+
+  signupAttemptByEmail.set(normalizedEmail, now)
+
   const { data: signUpData, error } = await supabase.auth.signUp({
-    email: data.email,
+    email: normalizedEmail,
     password: data.password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
     },
   })
 
   if (error) {
+    console.error('[Signup Error]', error.message, error.status, error.code)
     const errorMessages: { [key: string]: string } = {
       'User already registered': 'An account with this email already exists',
       'Invalid email': 'Please enter a valid email address',
+      'Signup requires a valid password': 'Please enter a valid password',
+      'Unable to validate email address: invalid format': 'Please enter a valid email address',
+      'For security purposes, you can only request this once every 60 seconds': 'Too many signup attempts. Please wait 60 seconds before trying again.',
+      over_email_send_rate_limit: 'Email sending rate limit reached. Please wait about a minute before trying again.',
     }
     
-    return { error: errorMessages[error.message] || 'Registration failed' }
+    return { error: errorMessages[error.code || ''] || errorMessages[error.message] || `Registration failed: ${error.message}` }
   }
 
   if (signUpData.user && !signUpData.user.identities?.length) {

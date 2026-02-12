@@ -1,9 +1,11 @@
 'use client'
 
 import { signup } from '../actions'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+
+const SIGNUP_CLIENT_COOLDOWN_MS = 60_000
 
 interface SignupState {
   error?: string
@@ -19,6 +21,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordTouched, setPasswordTouched] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const submitInFlight = useRef(false)
 
   // Password validation rules
   const validations = {
@@ -44,17 +47,43 @@ export default function SignupPage() {
   }
 
   const handleSubmit = async (formData: FormData) => {
+    if (submitInFlight.current) {
+      return
+    }
+
+    const cooldownUntilRaw = localStorage.getItem('signupCooldownUntil')
+    const cooldownUntil = cooldownUntilRaw ? Number(cooldownUntilRaw) : 0
+    const now = Date.now()
+
+    if (cooldownUntil > now) {
+      const waitSeconds = Math.ceil((cooldownUntil - now) / 1000)
+      toast.error('Please wait', {
+        description: `You can request another verification email in ${waitSeconds}s.`,
+        duration: 3500,
+      })
+      return
+    }
+
+    submitInFlight.current = true
     setIsSubmitting(true)
     
     try {
       const result: SignupState = await signup(formData)
       
       if (result.error) {
+        if (
+          result.error.toLowerCase().includes('wait') ||
+          result.error.toLowerCase().includes('rate limit')
+        ) {
+          localStorage.setItem('signupCooldownUntil', String(Date.now() + SIGNUP_CLIENT_COOLDOWN_MS))
+        }
+
         toast.error('Registration Failed', {
           description: result.error,
           duration: 5000,
         })
       } else if (result.success) {
+        localStorage.setItem('signupCooldownUntil', String(Date.now() + SIGNUP_CLIENT_COOLDOWN_MS))
         toast.success('Registration Successful', {
           description: result.message,
           duration: 4000,
@@ -70,26 +99,26 @@ export default function SignupPage() {
         duration: 5000,
       })
     } finally {
+      submitInFlight.current = false
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="relative min-h-screen bg-[var(--background)] px-4 py-12 text-[var(--foreground)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-r from-[#3b82f6]/30 via-transparent to-[#06b6d4]/30 blur-3xl" aria-hidden />
+    <div className="relative min-h-screen bg-[var(--background)] px-4 py-10 text-[var(--foreground)]">
       <form
         action={handleSubmit}
-        className="relative mx-auto w-full max-w-xl space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--card)]/95 p-8 shadow-2xl backdrop-blur"
+        className="relative mx-auto w-full max-w-xl space-y-5 rounded-2xl bg-[var(--card)] p-6"
       >
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#38bdf8]">Join Asa</p>
-          <h1 className="mt-2 text-3xl font-semibold">Create Account</h1>
-          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--primary)]">Join Asa</p>
+          <h1 className="mt-2 text-2xl font-semibold">Create Account</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Tell us about yourself so Asa can tailor every check-in.
           </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label htmlFor="email" className="text-sm font-medium">
             Email Address
           </label>
@@ -99,12 +128,12 @@ export default function SignupPage() {
             type="email"
             required
             placeholder="Enter your email"
-            className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+            className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             disabled={isSubmitting}
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label htmlFor="password" className="text-sm font-medium">
             Password
           </label>
@@ -118,7 +147,7 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setPasswordTouched(true)}
               placeholder="Create a strong password"
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 pr-12 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
               disabled={isSubmitting}
             />
             <button
@@ -152,7 +181,7 @@ export default function SignupPage() {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label htmlFor="confirmPassword" className="text-sm font-medium">
             Confirm Password
           </label>
@@ -165,7 +194,7 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your password"
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 pr-12 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
               disabled={isSubmitting}
             />
             <button
@@ -199,7 +228,7 @@ export default function SignupPage() {
         <button 
           type="submit"
           disabled={!isPasswordValid || isSubmitting}
-          className="w-full rounded-full bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <div className="flex items-center justify-center">
@@ -215,7 +244,7 @@ export default function SignupPage() {
           Already have an account?{' '}
           <a 
             href="/auth/login" 
-            className="font-semibold text-[#38bdf8] hover:text-[#0ea5e9]"
+            className="font-medium text-[var(--primary)] hover:opacity-80"
           >
             Sign in
           </a>

@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/client' // ← Make sure this is the BROWSER client
 import { Session, User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 
 type AuthContextType = {
   session: Session | null
@@ -26,8 +26,8 @@ export function AuthProvider({
   const [isLoading, setIsLoading] = useState(!initialSession)
   const router = useRouter()
   
-  // This should NOT be a Promise - use the browser client
-  const supabase = createClient()
+  // Memoize supabase client to prevent infinite re-renders
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     // Get initial session
