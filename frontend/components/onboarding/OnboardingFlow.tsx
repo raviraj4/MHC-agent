@@ -174,7 +174,6 @@ export function OnboardingFlow({
         setError(result.error)
         return
       }
-
       router.push("/dashboard")
     })
   }

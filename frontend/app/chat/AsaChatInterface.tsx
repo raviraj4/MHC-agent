@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 type Role = "user" | "assistant";
 type Status = "sending" | "sent" | "error";
@@ -36,6 +38,7 @@ const DEMO_PROMPTS = [
 
 export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps) {
   void _userId;
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -103,7 +106,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
 
   // scroll to bottom on messages change
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
   // auto resize textarea
@@ -212,11 +215,18 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
     }
   };
 
-  // Show loading state only on initial check (doesn't block entire UI after that)
+  /* Loading splash */
   if (!hasCheckedHealth) {
     return (
-      <div className="p-6 bg-[var(--card)] text-[var(--foreground)] min-h-[200px] rounded-2xl">
-        <div className="animate-pulse text-[var(--muted-foreground)]">Checking AI service…</div>
+      <div className="flex h-full items-center justify-center bg-[var(--background)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex gap-1.5">
+            <span className="typing-dot h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+            <span className="typing-dot h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+            <span className="typing-dot h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">Connecting to ASA…</p>
+        </div>
       </div>
     );
   }
@@ -224,7 +234,28 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
   const isOffline = hasCheckedHealth && isConnected === false;
 
   return (
-    <div className="flex flex-col h-full bg-[var(--card)] text-[var(--foreground)]">
+    <div className="flex flex-col h-full overflow-hidden bg-[var(--background)] ambient-mesh text-[var(--foreground)]">
+      {/* Header with back arrow */}
+      <header className="relative z-10 border-b border-[var(--border)] glass">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+          <button
+            onClick={() => router.push("/dashboard")}
+            aria-label="Back to dashboard"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="flex-1">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Chat with ASA</p>
+            <h2 className="text-lg font-semibold">Your wellbeing companion</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${isOffline ? 'bg-amber-400' : isConnected ? 'bg-emerald-400' : 'bg-[var(--muted)]'}`} />
+            <span className="text-xs text-[var(--muted-foreground)]">{isOffline ? 'Offline' : isConnected ? 'Online' : 'Checking…'}</span>
+          </div>
+        </div>
+      </header>
+
       {/* Offline Banner */}
       {isOffline && (
         <div className="px-4 py-3 bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800">
@@ -239,17 +270,17 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
           </p>
         </div>
       )}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="relative z-[1] flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <div className="w-full max-w-4xl overflow-hidden rounded-3xl border-2 border-[var(--border)] bg-[var(--card)] p-8 shadow-xl dark:border-slate-700">
+            <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg">
               <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(220px,320px)] md:items-center">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--primary)]">
                     Always here
                   </p>
-                  <h3 className="text-2xl font-semibold text-slate-900 dark:text-white">Start a conversation</h3>
-                  <div className="mt-5 rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-5 py-4 text-base text-slate-800 shadow-inner dark:border-slate-800 dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-950 dark:text-slate-200">
+                  <h3 className="text-2xl font-semibold">Start a conversation</h3>
+                  <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--muted)]/50 px-5 py-4 text-base text-[var(--foreground)] shadow-sm">
                     “Hello! I&apos;m ASA, your wellbeing companion. How are you feeling today? Always here to listen.”
                   </div>
                 </div>
@@ -293,7 +324,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
                   className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed
                     ${m.role === "user"
                       ? "bg-gradient-to-r from-sky-500 to-cyan-400 text-white"
-                      : "bg-[var(--card)] text-[var(--foreground)]"}
+                      : "bg-[var(--card)] border border-[var(--muted-foreground)]/30 text-[var(--foreground)] shadow-sm"}
                   `}
                 >
                   <div className="whitespace-pre-wrap break-words">
@@ -312,7 +343,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
         <div ref={scrollRef} />
       </div>
 
-      <div className="p-4 bg-[var(--card)]">
+      <div className="relative z-[1] p-4 glass border-t border-[var(--border)]">
         <div className="mb-3">
           <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--muted-foreground)]">
             Try a prompt
@@ -324,7 +355,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
                 type="button"
                 onClick={() => handlePromptInsert(prompt)}
                 disabled={isOffline}
-                className="rounded-lg bg-[var(--muted)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] transition hover:bg-[var(--muted)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] transition hover:bg-[var(--muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]/60 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {prompt}
               </button>
@@ -338,7 +369,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isOffline ? "Asa is offline — waiting to reconnect..." : "Type a message..."}
-            className="w-full resize-none min-h-[44px] max-h-[200px] p-3 rounded-xl bg-[var(--muted)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+            className="w-full resize-none min-h-[44px] max-h-[160px] p-3 rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
             rows={1}
             disabled={isLoading || isOffline}
           />
@@ -350,7 +381,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
               <button
                 onClick={send}
                 disabled={isLoading || isOffline}
-                className="inline-flex items-center px-4 py-2 rounded-xl bg-[var(--primary)] text-sm font-medium text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-60 transition"
+                className="inline-flex items-center px-4 py-2 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)] text-sm font-medium text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-60 transition"
               >
                 {isOffline ? "Offline" : isLoading ? "Sending..." : "Send"}
               </button>

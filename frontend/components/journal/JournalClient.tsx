@@ -245,7 +245,7 @@ export function JournalClient() {
                 <button
                   key={prompt.title}
                   onClick={() => setView("new")}
-                  className="rounded-xl bg-[var(--card)] p-4 text-left transition hover:bg-[var(--muted)]"
+                  className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-left transition hover:bg-[var(--primary)]/10 hover:border-[var(--primary)]/30"
                 >
                   <p className="font-medium text-sm">{prompt.title}</p>
                   <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{prompt.subtitle}</p>
@@ -264,7 +264,7 @@ export function JournalClient() {
             {filteredEntries.map((entry) => (
               <article
                 key={entry.id}
-                className="rounded-xl bg-[var(--card)] p-4 transition hover:bg-[var(--muted)]/50"
+                className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition hover:border-[var(--primary)]/30 hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">

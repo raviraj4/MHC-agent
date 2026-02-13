@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { CgProfile } from 'react-icons/cg'
-import { HiOutlineMenuAlt2, HiOutlineChatAlt2, HiOutlineHome
- } from 'react-icons/hi'
-import { IoClose, IoSparkles, IoShieldCheckmarkOutline } from 'react-icons/io5'
+import { HiOutlineMenuAlt2, HiOutlineChatAlt2, HiOutlineHome } from 'react-icons/hi'
+import { IoClose, IoSparkles } from 'react-icons/io5'
+import { HiOutlineBookOpen } from 'react-icons/hi2'
 
 export default function AppLayout({
   children,
@@ -17,160 +17,135 @@ export default function AppLayout({
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  
-  const navCTA = (() => {
-    if (pathname?.startsWith('/profile') || pathname?.startsWith('/chat')) {
-      return { href: '/dashboard', label: 'Dashboard', icon: HiOutlineHome }
-    }
-    if (pathname?.startsWith('/dashboard')) {
-      return { href: '/chat', label: 'Chat', icon: HiOutlineChatAlt2 }
-    }
-    return { href: '/dashboard', label: 'Dashboard', icon: HiOutlineHome }
-  })()
 
-  const NavIcon = navCTA.icon
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
+    { href: '/chat', label: 'Chat with ASA', icon: HiOutlineChatAlt2 },
+    { href: '/journal', label: 'Journal', icon: HiOutlineBookOpen },
+  ]
 
   return (
-    <div className="ambient-page-bg min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="flex h-screen">
-        {/* Mobile Sidebar Overlay */}
+    <div className="ambient-mesh min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <div className="relative z-[1] flex h-screen">
+        {/* Mobile overlay */}
         {sidebarOpen && (
-          <div 
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
-        
-        {/* Sidebar */}
+
+        {/* ── Sidebar ── */}
         <aside className={`
-          fixed inset-y-0 left-0 z-50 w-72 border-r border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-sm flex flex-col transform transition-transform duration-300 ease-out
+          fixed inset-y-0 left-0 z-50 flex w-[270px] flex-col
+          glass-strong
+          transform transition-transform duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:relative lg:translate-x-0
         `}>
-          {/* Sidebar Header */}
-          <div className="p-5 flex items-center justify-between">
+          {/* Brand */}
+          <div className="flex items-center justify-between px-5 py-5">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center">
-                <IoSparkles className="text-white text-lg" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] shadow-lg shadow-[var(--primary)]/20">
+                <IoSparkles className="text-lg text-white" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">ASA</h2>
-                <p className="text-[10px] text-[var(--muted-foreground)]">Your wellbeing companion</p>
+                <h2 className="text-sm font-bold tracking-tight text-[var(--foreground)]">ASA</h2>
+                <p className="text-[10px] text-[var(--muted-foreground)]">Wellbeing companion</p>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
               aria-label="Close sidebar"
-              className="lg:hidden p-2 rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
+              className="rounded-xl p-2 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] lg:hidden"
             >
               <IoClose className="text-xl" />
             </button>
           </div>
-          
+
           {/* Navigation */}
-           <nav className="px-3 mb-4">
-            <Link 
-              href="/dashboard"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                pathname?.startsWith('/dashboard') 
-                  ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-medium' 
-                  : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-              }`}
-            >
-              <HiOutlineHome className="text-lg" />
-              Dashboard
-            </Link>
-            <Link 
-              href="/chat"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                pathname?.startsWith('/chat') 
-                  ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-medium' 
-                  : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-              }`}
-            >
-              <HiOutlineChatAlt2 className="text-lg" />
-              Chat with ASA
-            </Link>
+          <nav className="mt-1 space-y-1 px-3">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname?.startsWith(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[var(--primary)]/10 font-semibold text-[var(--primary)] shadow-sm shadow-[var(--primary)]/5'
+                      : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)]/60 hover:text-[var(--foreground)]'
+                  }`}
+                >
+                  <Icon className={`text-lg transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`} />
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* Divider */}
-          <div className="mx-5 h-px bg-[var(--muted)]" />
-          
-          {/* Chat History */}
-          <div className="flex-1 overflow-y-auto p-3">
-            <p className="px-3 py-2 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)] font-medium">
+          <div className="mx-5 mt-5 h-px bg-[var(--border)]" />
+
+          {/* Chat history */}
+          <div className="flex-1 overflow-y-auto px-3 pt-4">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--muted-foreground)]">
               Recent Chats
             </p>
             <div className="space-y-1">
-              <div className="rounded-xl bg-[var(--muted)]/50 px-3 py-2.5 cursor-pointer hover:bg-[var(--muted)] transition-colors">
-                <p className="text-sm text-[var(--foreground)] truncate">
-                  Today&apos;s Reflection
-                </p>
-                <p className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">
-                  How are you feeling today?
-                </p>
+              <div className="cursor-pointer rounded-xl px-3 py-2.5 transition-colors hover:bg-[var(--muted)]/50">
+                <p className="truncate text-sm text-[var(--foreground)]">Today&apos;s Reflection</p>
+                <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">How are you feeling today?</p>
               </div>
             </div>
           </div>
-          
-          {/* Sidebar Footer */}
+
+          {/* Footer */}
           <div className="p-4">
-            <div className="rounded-xl bg-gradient-to-br from-[var(--primary)]/5 to-transparent p-3">
-              <p className="text-xs text-[var(--muted-foreground)] text-center">
-                🔒 Your conversations are private
+            <div className="rounded-2xl bg-gradient-to-br from-[var(--primary)]/5 via-[var(--secondary)]/5 to-transparent p-3.5 text-center">
+              <p className="text-xs text-[var(--muted-foreground)]">
+                <span className="mr-1">🔒</span> Your conversations are private
               </p>
             </div>
           </div>
         </aside>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Top Bar */}
-          <header className="h-14 flex items-center justify-between px-4 lg:px-6 bg-[var(--card)]/80 backdrop-blur-md sticky top-0 z-30"> <div className="flex items-center gap-3">
-              {/* Hamburger for mobile */}
+        {/* ── Main area ── */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Top bar */}
+          <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between px-4 lg:px-6">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open menu"
-                className="lg:hidden p-2 -ml-2 rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] transition-colors"
+                className="-ml-2 rounded-xl p-2 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] lg:hidden"
               >
                 <HiOutlineMenuAlt2 className="text-xl" />
               </button>
-              
-              {/* Logo - visible on mobile */}
-              <div className="lg:hidden flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center">
-                  <IoSparkles className="text-white text-sm" />
+              {/* Mobile logo */}
+              <div className="flex items-center gap-2 lg:hidden">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)]">
+                  <IoSparkles className="text-sm text-white" />
                 </div>
-                <span className="font-semibold text-sm">ASA</span>
+                <span className="text-sm font-bold">ASA</span>
               </div>
             </div>
-            
-              {/* Quick action button */}
+
             <div className="flex items-center gap-2">
-            {/*   <Link
-                href={navCTA.href}
-                className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--muted)]/80 px-3 py-1.5 text-xs font-medium text-[var(--foreground)] transition-colors"
-              >
-                <NavIcon className="text-sm" />
-                {navCTA.label}
-              </Link> */}
-              
-              {/* User email - hidden on small screens */}
-              <span className="hidden md:block text-xs text-[var(--muted-foreground)] max-w-[150px] truncate">
+              <span className="hidden max-w-[180px] truncate text-xs text-[var(--muted-foreground)] md:block">
                 {userEmail}
               </span>
-              
-              {/* Profile button */}
               <Link
                 href="/profile"
-                className="p-2 rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                className="rounded-xl p-2 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               >
                 <CgProfile className="text-xl" />
               </Link>
             </div>
           </header>
 
-          {/* Main Content */}
+          {/* Content */}
           <main className="flex-1 overflow-hidden">
             {children}
           </main>
