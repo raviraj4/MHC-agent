@@ -35,8 +35,8 @@ const STEP_LABELS = {
 
 const TOTAL_STEPS = 5
 
-const highlightText = "text-[#38bdf8]"
-const gradientPrimary = "bg-gradient-to-r from-[#3b82f6] via-[#0284c7] to-[#06b6d4]"
+const highlightText = "text-[var(--primary)]"
+const gradientPrimary = "bg-gradient-to-r from-sky-500 to-cyan-400"
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5
 
@@ -57,10 +57,10 @@ interface OnboardingFlowProps {
 
 const chipStyles = (
   isActive: boolean,
-) => `flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition-all ${
+) => `flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm transition-all ${
   isActive
-    ? `${gradientPrimary} border-transparent text-white shadow-sm`
-    : "border-[var(--border)] text-[var(--foreground)]/80 hover:border-[#38bdf8]"
+    ? `${gradientPrimary} text-white`
+    : "bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--muted)]/80"
 }`
 
 export function OnboardingFlow({
@@ -174,7 +174,6 @@ export function OnboardingFlow({
         setError(result.error)
         return
       }
-
       router.push("/dashboard")
     })
   }
@@ -191,20 +190,20 @@ export function OnboardingFlow({
   )
 
   const renderIntro = () => (
-    <div className="text-center space-y-6">
-      <p className={`text-sm font-semibold uppercase tracking-[0.3em] ${highlightText}`}>
+    <div className="text-center space-y-5">
+      <p className={`text-[10px] font-medium uppercase tracking-widest ${highlightText}`}>
         Start Conversation
       </p>
-      <h2 className="text-3xl font-semibold">
+      <h2 className="text-2xl font-semibold">
         Ready to meet Asa?
       </h2>
-      <p className="mx-auto max-w-2xl text-base text-[var(--muted-foreground)]">
+      <p className="mx-auto max-w-lg text-sm text-[var(--muted-foreground)]">
         Before we dive into your wellbeing journey, let&apos;s personalize Asa with a few quick
         questions. It takes less than a minute.
       </p>
       <button
         onClick={handleContinue}
-        className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-semibold text-white shadow-lg shadow-sky-500/20 hover:opacity-95 ${gradientPrimary}`}
+        className={`inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 ${gradientPrimary}`}
       >
         Start conversation
       </button>
@@ -212,19 +211,18 @@ export function OnboardingFlow({
   )
 
   const renderNameStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {renderStepHeader()}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
-        <p className={`text-sm font-medium ${highlightText}`}>Step 1</p>
-        <h3 className="mt-2 text-2xl font-semibold">
+      <div className="rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)]">
+        <p className={`text-[10px] font-medium uppercase tracking-widest ${highlightText}`}>Step 1</p>
+        <h3 className="mt-2 text-xl font-semibold">
           Welcome to Asa
         </h3>
-        <p className="mt-2 text-base text-[var(--muted-foreground)]">
-          Let&apos;s personalise your experience. We&apos;re here to support you on your wellbeing
-          journey. What should we call you?
+        <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
+          Let&apos;s personalise your experience. What should we call you?
         </p>
 
-        <label className="mt-8 block text-sm font-medium">
+        <label className="mt-5 block text-sm font-medium">
           Your name
         </label>
         <input
@@ -232,25 +230,25 @@ export function OnboardingFlow({
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="e.g. Sam"
-          className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+          className="mt-1.5 w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
         />
       </div>
     </div>
   )
 
   const renderGoalsStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {renderStepHeader()}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
-        <p className={`text-sm font-medium ${highlightText}`}>Step 2</p>
-        <h3 className="mt-2 text-2xl font-semibold">
+      <div className="rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)]">
+        <p className={`text-[10px] font-medium uppercase tracking-widest ${highlightText}`}>Step 2</p>
+        <h3 className="mt-2 text-xl font-semibold">
           What are your wellbeing goals?
         </h3>
-        <p className="mt-2 text-base text-[var(--muted-foreground)]">
+        <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
           Select all that resonate with you. You can always change these later.
         </p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
           {GOALS.map((goal) => (
             <button
               key={goal}
@@ -267,18 +265,18 @@ export function OnboardingFlow({
   )
 
   const renderActivitiesStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {renderStepHeader()}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
-        <p className={`text-sm font-medium ${highlightText}`}>Step 3</p>
-        <h3 className="mt-2 text-2xl font-semibold">
+      <div className="rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)]">
+        <p className={`text-[10px] font-medium uppercase tracking-widest ${highlightText}`}>Step 3</p>
+        <h3 className="mt-2 text-xl font-semibold">
           What activities energise you?
         </h3>
-        <p className="mt-2 text-base text-[var(--muted-foreground)]">
+        <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
           Pick a few favorites—we&apos;ll use them to tailor prompts and check-ins.
         </p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
           {ACTIVITIES.map((activity) => (
             <button
               key={activity}
@@ -295,18 +293,18 @@ export function OnboardingFlow({
   )
 
   const renderEmergencyContactStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {renderStepHeader()}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
-        <p className={`text-sm font-medium ${highlightText}`}>Step 4</p>
-        <h3 className="mt-2 text-2xl font-semibold">
+      <div className="rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)]">
+        <p className={`text-[10px] font-medium uppercase tracking-widest ${highlightText}`}>Step 4</p>
+        <h3 className="mt-2 text-xl font-semibold">
           Who should we reach out to in a crisis?
         </h3>
-        <p className="mt-2 text-base text-[var(--muted-foreground)]">
+        <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
           This stays private and is only used if you ask Asa to escalate for safety support.
         </p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="text-sm font-medium">Full name</label>
             <input
@@ -314,7 +312,7 @@ export function OnboardingFlow({
               value={emergencyContact.name}
               onChange={(event) => setEmergencyContact((prev) => ({ ...prev, name: event.target.value }))}
               placeholder="e.g. Jordan Smith"
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="mt-1.5 w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             />
           </div>
           <div>
@@ -324,7 +322,7 @@ export function OnboardingFlow({
               value={emergencyContact.relationship}
               onChange={(event) => setEmergencyContact((prev) => ({ ...prev, relationship: event.target.value }))}
               placeholder="Partner, sibling, therapist..."
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="mt-1.5 w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             />
           </div>
           <div>
@@ -334,7 +332,7 @@ export function OnboardingFlow({
               value={emergencyContact.phone}
               onChange={(event) => setEmergencyContact((prev) => ({ ...prev, phone: event.target.value }))}
               placeholder="Include country code"
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="mt-1.5 w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             />
           </div>
           <div>
@@ -344,17 +342,17 @@ export function OnboardingFlow({
               value={emergencyContact.email}
               onChange={(event) => setEmergencyContact((prev) => ({ ...prev, email: event.target.value }))}
               placeholder="contact@example.com"
-              className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-base focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="mt-1.5 w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             />
           </div>
         </div>
 
-        <label className="mt-6 flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--muted)]/40 p-4 text-sm">
+        <label className="mt-5 flex items-start gap-3 rounded-xl bg-[var(--muted)]/50 p-3 text-sm">
           <input
             type="checkbox"
             checked={emergencyContact.consent}
             onChange={(event) => setEmergencyContact((prev) => ({ ...prev, consent: event.target.checked }))}
-            className="mt-1 h-4 w-4 rounded border border-[var(--border)] text-[#38bdf8] focus:ring-[#38bdf8]"
+            className="mt-0.5 h-4 w-4 rounded text-[var(--primary)] focus:ring-[var(--ring)]"
           />
           <span className="text-[var(--muted-foreground)]">
             I confirm this person knows they&apos;re my safety contact and consented to being contacted if needed.
@@ -365,43 +363,43 @@ export function OnboardingFlow({
   )
 
   const renderSummaryStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {renderStepHeader()}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-lg shadow-sky-500/5">
-        <p className={`text-sm font-medium ${highlightText}`}>Step 5</p>
-        <h3 className="mt-2 text-2xl font-semibold">
+      <div className="rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)]">
+        <p className={`text-[10px] font-medium uppercase tracking-widest ${highlightText}`}>Step 5</p>
+        <h3 className="mt-2 text-xl font-semibold">
           All set, {summary.name}!
         </h3>
-        <p className="mt-2 text-base text-[var(--muted-foreground)]">
+        <p className="mt-1.5 text-sm text-[var(--muted-foreground)]">
           Here&apos;s a quick snapshot of your preferences. You can update them anytime from
           your profile.
         </p>
 
-        <div className="mt-6 space-y-4">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)]/60 p-4">
-            <p className="text-sm font-medium text-[var(--muted-foreground)]">Goals</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-5 space-y-3">
+          <div className="rounded-xl bg-[var(--muted)]/50 p-4">
+            <p className="text-xs font-medium text-[var(--muted-foreground)]">Goals</p>
+            <div className="mt-2 flex flex-wrap gap-2">
               {(summary.goals.length ? summary.goals : ["Not specified yet"]).map((goal) => (
-                <span key={goal} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs text-[var(--foreground)]">
+                <span key={goal} className="rounded-lg bg-[var(--card)] px-2.5 py-1 text-xs text-[var(--foreground)]">
                   {goal}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)]/60 p-4">
-            <p className="text-sm font-medium text-[var(--muted-foreground)]">Activities</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <div className="rounded-xl bg-[var(--muted)]/50 p-4">
+            <p className="text-xs font-medium text-[var(--muted-foreground)]">Activities</p>
+            <div className="mt-2 flex flex-wrap gap-2">
               {(summary.activities.length ? summary.activities : ["Not specified yet"]).map((activity) => (
-                <span key={activity} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs text-[var(--foreground)]">
+                <span key={activity} className="rounded-lg bg-[var(--card)] px-2.5 py-1 text-xs text-[var(--foreground)]">
                   {activity}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)]/60 p-4">
-            <p className="text-sm font-medium text-[var(--muted-foreground)]">Emergency contact</p>
+          <div className="rounded-xl bg-[var(--muted)]/50 p-4">
+            <p className="text-xs font-medium text-[var(--muted-foreground)]">Emergency contact</p>
             {summary.emergencyContact.name && summary.emergencyContact.phone ? (
               <dl className="mt-3 space-y-1 text-sm">
                 <div className="flex items-center justify-between">
@@ -435,7 +433,7 @@ export function OnboardingFlow({
   )
 
   const renderNavigation = () => (
-    <div className="mt-8 flex items-center justify-between">
+    <div className="mt-6 flex items-center justify-between">
       <button
         type="button"
         onClick={handleBack}
@@ -453,7 +451,7 @@ export function OnboardingFlow({
             (step === 4 && (!emergencyContact.name.trim() || !emergencyContact.phone.trim() || !emergencyContact.consent)) ||
             isPending
           }
-          className={`inline-flex items-center rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/10 hover:opacity-95 disabled:opacity-60 ${gradientPrimary}`}
+          className={`inline-flex items-center rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60 ${gradientPrimary}`}
         >
           Continue
         </button>
@@ -462,7 +460,7 @@ export function OnboardingFlow({
           type="button"
           onClick={handleSubmit}
           disabled={isPending}
-          className={`inline-flex items-center rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/10 hover:opacity-95 disabled:opacity-60 ${gradientPrimary}`}
+          className={`inline-flex items-center rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60 ${gradientPrimary}`}
         >
           {isPending ? "Saving..." : "Get started"}
         </button>

@@ -27,59 +27,79 @@ export default async function DashboardPage() {
 
   const displayName = profile.full_name || profile.user_name || user.email || 'friend'
 
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
     <AppLayout userEmail={user.email!}>
-      <section className="h-full overflow-y-auto bg-[var(--muted)] px-4 py-10 dark:bg-[var(--background)]">
-        <div className="mx-auto flex max-w-5xl flex-col gap-6">
-          <div className="rounded-3xl m-4">
-            {/* border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900 */}
-            
-            <h1 className="mt-4 text-3xl font-semibold text-gray-900 dark:text-white">
-              Hi {displayName}, how are you feeling today?
+      <section className="h-full overflow-y-auto px-4 py-8 lg:px-8">
+        <div className="mx-auto flex max-w-4xl flex-col gap-8">
+          {/* Hero greeting */}
+          <div className="animate-fade-in-up py-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">{greeting}</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--foreground)]">
+              Hi {displayName} <span className="inline-block origin-[70%_70%] animate-[wave_2s_ease-in-out_1]">👋</span>
             </h1>
-            <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-              Choose where you&apos;d like to begin. You can chat with Asa any time or drop a quick
-              journal entry.
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-[var(--muted-foreground)]">
+              How are you today? Choose where you&apos;d like to begin — chat, journal, or just breathe.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Action cards */}
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Chat Card */}
             <Link
               href="/chat"
-              className="rounded-3xl bg-gradient-to-r from-[#3b82f6] via-[#0284c7] to-[#06b6d4] p-6 shadow-lg shadow-sky-500/25 transition hover:scale-[1.01]"
+              className="animate-fade-in-up stagger-1 group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--primary)] via-sky-500 to-cyan-400 p-6 shadow-lg shadow-[var(--primary)]/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--primary)]/25"
             >
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/50 text-white/90">
-                <HiOutlineChatBubbleOvalLeft className="text-lg" />
-              </div>
-              <div className="mt-4 text-white">
-                <p className="text-sm font-semibold uppercase tracking-[0.3em]">Chat with ASA</p>
-                <h2 className="mt-3 text-2xl font-semibold">Get support anytime</h2>
-                <p className="mt-2 text-sm text-white/80">
-                  Open a supportive space to talk through anything on your mind.
-                </p>
-                <span className="mt-4 inline-flex items-center text-sm font-semibold text-white">
-                  Go to chat →
-                </span>
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+              <div className="relative">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-sm">
+                  <HiOutlineChatBubbleOvalLeft className="text-2xl" />
+                </div>
+                <div className="mt-5">
+                  <h2 className="text-lg font-bold text-white">Chat with ASA</h2>
+                  <p className="mt-1.5 text-sm leading-relaxed text-white/80">
+                    Open a supportive space to talk through anything on your mind.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-white">
+                  Start chatting
+                  <span className="transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden>→</span>
+                </div>
               </div>
             </Link>
 
+            {/* Journal Card */}
             <Link
               href="/journal"
-              className="group relative overflow-hidden rounded-3xl border border-sky-200 bg-white/95 p-6 shadow-xl shadow-sky-100/80 ring-1 ring-sky-300/40 transition hover:-translate-y-[2px] hover:shadow-2xl dark:border-slate-700 dark:bg-slate-900/85 dark:shadow-2xl dark:shadow-black/50"
+              className="animate-fade-in-up stagger-2 group relative overflow-hidden rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)] transition-all duration-300 hover:-translate-y-1 hover:ring-[var(--primary)]/30 hover:shadow-lg hover:shadow-[var(--primary)]/8"
             >
-              <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-50 via-cyan-50/40 to-emerald-50 opacity-80 transition group-hover:opacity-95 dark:from-slate-900 dark:via-slate-900/40 dark:to-slate-950" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--secondary)]/[0.03] to-transparent" />
               <div className="relative">
-                <p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#0369a1] dark:text-sky-200">Reflection</p>
-                <h2 className="mt-3 text-2xl font-semibold text-[#0f172a] dark:text-white">Journal entry</h2>
-                <p className="mt-2 text-sm text-[#0f172a]/75 dark:text-slate-300">
-                  Capture thoughts, wins, or challenges—you&apos;ll soon see guided prompts here.
-                </p>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0369a1] transition group-hover:translate-x-1 dark:text-sky-200">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted)] text-lg">
+                  📝
+                </div>
+                <div className="mt-5">
+                  <h2 className="text-lg font-bold text-[var(--foreground)]">Journal entry</h2>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted-foreground)]">
+                    Capture your thoughts, wins, or challenges in a private space.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-[var(--primary)]">
                   Open journal
-                  <span aria-hidden>→</span>
-                </span>
+                  <span className="transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden>→</span>
+                </div>
               </div>
             </Link>
+          </div>
+
+          {/* Quick tips */}
+          <div className="animate-fade-in-up stagger-3 rounded-2xl bg-[var(--card)] p-5 ring-1 ring-[var(--border)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--muted-foreground)]">Daily tip</p>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--foreground)]">
+              💡 <strong>Try the 5-4-3-2-1 technique</strong> — notice 5 things you see, 4 you can touch, 3 you hear, 2 you smell, and 1 you taste. It&apos;s a simple way to ground yourself when feeling anxious.
+            </p>
           </div>
         </div>
       </section>

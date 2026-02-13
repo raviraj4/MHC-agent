@@ -16,38 +16,35 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] px-4 py-12">
-      <div className="pointer-events-none absolute inset-0 opacity-60 blur-3xl" aria-hidden>
-        <div className="mx-auto h-full max-w-3xl bg-gradient-to-r from-[#3b82f6]/20 via-[#06b6d4]/20 to-transparent" />
-      </div>
       <div className="relative mx-auto w-full max-w-md">
-        <form className="space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--card)]/95 p-8 shadow-2xl backdrop-blur">
+        <form className="space-y-5 rounded-2xl bg-[var(--card)] p-6">
           <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#38bdf8]">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--primary)]">
               Welcome back
             </p>
-            <h1 className="mt-2 text-3xl font-semibold">User Login</h1>
-            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              Sign in to continue your conversation with Asa.
+            <h1 className="mt-2 text-2xl font-semibold">Sign in</h1>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Continue your conversation with Asa.
             </p>
           </div>
 
-          <div className="relative text-center text-xs text-[var(--muted-foreground)]">
-            <span className="bg-[var(--card)] px-3 uppercase tracking-[0.3em]">continue with email</span>
-            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--border)]" aria-hidden />
+          <div className="relative text-center text-[10px] text-[var(--muted-foreground)]">
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--muted)]" aria-hidden />
+            <span className="relative bg-[var(--card)] px-3 uppercase tracking-widest">continue with email</span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
             <input
               id="email"
               name="email"
               type="email"
               required
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+              className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium">Password</label>
             <div className="relative">
               <input
@@ -55,7 +52,7 @@ export default function LoginPage() {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--input-background)] px-4 py-3 pr-12 text-sm focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/30"
+                className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
               />
               <button
                 type="button"
@@ -78,24 +75,24 @@ export default function LoginPage() {
 
           <button
             formAction={formAction}
-            className="w-full rounded-full bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:opacity-95"
+            className="w-full rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] transition hover:opacity-90"
           >
-            Log in (User)
+            Sign in
           </button>
 
           {state.error && <p className="text-sm text-red-500">{state.message}</p>}
           {!state.error && state.message && <p className="text-sm text-emerald-500">{state.message}</p>}
 
-          <div className="space-y-2 text-center text-sm text-[var(--muted-foreground)]">
-            <p>Don&apos;t have a member account?</p>
-            <a href="/auth/signup" className="font-semibold text-[#38bdf8] hover:text-[#0ea5e9]">
-              Sign up as a Member
+          <div className="space-y-1.5 text-center text-sm text-[var(--muted-foreground)]">
+            <p>Don&apos;t have an account?</p>
+            <a href="/auth/signup" className="font-medium text-[var(--primary)] hover:opacity-80">
+              Sign up
             </a>
           </div>
 
-          <div className="space-y-2 text-center text-sm text-[var(--muted-foreground)]">
+          <div className="space-y-1.5 text-center text-sm text-[var(--muted-foreground)]">
             <p>Registered mental health pro?</p>
-            <a href="#" className="font-semibold text-[#38bdf8] hover:text-[#0ea5e9]">
+            <a href="#" className="font-medium text-[var(--primary)] hover:opacity-80">
               Sign up as a Pro
             </a>
           </div>
