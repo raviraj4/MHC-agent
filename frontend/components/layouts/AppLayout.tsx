@@ -7,6 +7,7 @@ import { CgProfile } from 'react-icons/cg'
 import { HiOutlineMenuAlt2, HiOutlineChatAlt2, HiOutlineHome } from 'react-icons/hi'
 import { IoClose, IoSparkles } from 'react-icons/io5'
 import { HiOutlineBookOpen } from 'react-icons/hi2'
+import { BirdIcon } from 'lucide-react'
 
 export default function AppLayout({
   children,
@@ -46,8 +47,8 @@ export default function AppLayout({
           {/* Brand */}
           <div className="flex items-center justify-between px-5 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] shadow-lg shadow-[var(--primary)]/20">
-                <IoSparkles className="text-lg text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 to-cyan-500 shadow-lg shadow-[var(--primary)]/20">
+                <BirdIcon className="text-lg text-white" />
               </div>
               <div>
                 <h2 className="text-sm font-bold tracking-tight text-[var(--foreground)]">ASA</h2>
@@ -125,8 +126,8 @@ export default function AppLayout({
               </button>
               {/* Mobile logo */}
               <div className="flex items-center gap-2 lg:hidden">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)]">
-                  <IoSparkles className="text-sm text-white" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-300 to-cyan-500 ">
+                  <BirdIcon className="text-sm text-white" />
                 </div>
                 <span className="text-sm font-bold">ASA</span>
               </div>

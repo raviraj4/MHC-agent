@@ -6,13 +6,14 @@ import { redirect } from 'next/navigation'
 export default async function JournalPage() {
   const supabase = await createClient()
   const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!user || error) {
+  if (!session) {
     redirect('/auth/login')
   }
+
+  const user = session.user
 
   const { data: profile } = await supabase
     .from('profiles')

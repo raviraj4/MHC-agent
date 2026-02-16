@@ -2,28 +2,61 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { HiOutlineChatBubbleOvalLeft } from 'react-icons/hi2'
 import AppLayout from '@/components/layouts/AppLayout'
+import DashboardMoodSection from '@/components/mood/DashboardMoodSection'
 import { createClient } from '@/utils/supabase/server'
+import type { MoodCheckin } from '@/types'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!user || error) {
+  if (!session) {
     redirect('/auth/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, user_name, onboarding_completed')
-    .eq('id', user.id)
-    .maybeSingle()
+  const user = session.user
+
+  // Fetch profile, month's mood check-ins, and today's check-in in parallel
+  const now = new Date()
+  const month = now.getMonth()
+  const year = now.getFullYear()
+  const monthStart = new Date(year, month, 1).toISOString()
+  const todayStart = new Date(year, month, now.getDate()).toISOString()
+  const todayEnd = new Date(year, month, now.getDate() + 1).toISOString()
+
+  const [profileResult, monthCheckinsResult, todayCheckinResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, user_name, onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('mood_checkins')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('created_at', monthStart)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('mood_checkins')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('created_at', todayStart)
+      .lt('created_at', todayEnd)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  const profile = profileResult.data
 
   if (!profile?.onboarding_completed) {
     redirect('/start-conversation')
   }
+
+  const monthCheckins = (monthCheckinsResult.data ?? []) as MoodCheckin[]
+  const todayCheckin = (todayCheckinResult.data as MoodCheckin) ?? null
 
   const displayName = profile.full_name || profile.user_name || user.email || 'friend'
 
@@ -93,6 +126,14 @@ export default async function DashboardPage() {
               </div>
             </Link>
           </div>
+
+          {/* Mood check-in + graph */}
+          <DashboardMoodSection
+            initialCheckins={monthCheckins}
+            todayCheckin={todayCheckin}
+            month={month}
+            year={year}
+          />
 
           {/* Quick tips */}
           <div className="animate-fade-in-up stagger-3 rounded-2xl bg-[var(--card)] p-5 ring-1 ring-[var(--border)]">
