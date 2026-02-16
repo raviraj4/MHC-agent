@@ -126,8 +126,8 @@ export default function AppLayout({
               </button>
               {/* Mobile logo */}
               <div className="flex items-center gap-2 lg:hidden">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)]">
-                  <IoSparkles className="text-sm text-white" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-300 to-cyan-500 ">
+                  <BirdIcon className="text-sm text-white" />
                 </div>
                 <span className="text-sm font-bold">ASA</span>
               </div>
