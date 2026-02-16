@@ -70,6 +70,18 @@ export interface AvatarOption {
   is_active: boolean
 }
 
+// Mood Check-in Types
+export interface MoodCheckin {
+  id: string
+  user_id: string
+  mood: number
+  energy: number
+  stress: number
+  note?: string | null
+  tags?: string[] | null
+  created_at: string
+}
+
 // Form Types
 export interface LoginFormData {
   email: string

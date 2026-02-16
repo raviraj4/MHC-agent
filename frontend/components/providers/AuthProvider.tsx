@@ -30,38 +30,38 @@ export function AuthProvider({
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    // Get initial session
-    const getVerifiedUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error || !user) {
-        setSession(null)
-        setUser(null)
-      } else {
-        setUser(user)
-        // Optionally reconstruct a minimal session object
-        setSession({ user } as Session)
-      }
-
-      setIsLoading(false)
-    }
-
+    // Only fetch user if no initial session was provided (edge case)
     if (!initialSession) {
-      getVerifiedUser()
+      supabase.auth.getUser().then(({ data: { user }, error }) => {
+        if (error || !user) {
+          setSession(null)
+          setUser(null)
+        } else {
+          setUser(user)
+          setSession({ user } as Session)
+        }
+        setIsLoading(false)
+      })
     }
 
-    // Listen for auth changes
+    // Listen for auth changes — only refresh on meaningful events
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-
       setIsLoading(false)
-      router.refresh()
+
+      // Only trigger a server refresh on actual sign-in/sign-out,
+      // NOT on INITIAL_SESSION or TOKEN_REFRESHED (which would loop)
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        router.refresh()
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase, router, initialSession])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase])
 
   const signOut = async () => {
     await supabase.auth.signOut()

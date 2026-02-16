@@ -7,11 +7,12 @@ export default async function Home() {
   const supabase = await createClient()
   
   const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (user && !error) {
+  const user = session?.user
+
+  if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('onboarding_completed')
