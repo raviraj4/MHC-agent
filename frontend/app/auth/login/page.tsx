@@ -71,6 +71,11 @@ export default function LoginPage() {
                 )}
               </button>
             </div>
+            <div className="text-right">
+              <a href="/auth/forgot-password" className="text-xs text-[var(--primary)] hover:opacity-80">
+                Forgot password?
+              </a>
+            </div>
           </div>
 
           <button

@@ -121,6 +121,77 @@ export async function signup(formData: FormData) {
   }
 }
 
+/**
+ * Sends a password reset email via Supabase.
+ * Accepts an optional `userType` to build a redirect URL that the
+ * reset-password page can use for role-aware post-reset routing
+ * (e.g. user / professional / organisation).
+ */
+export async function forgotPassword(
+  _prevState: { error?: string; success?: boolean; message?: string },
+  formData: FormData
+) {
+  const supabase = await createClient()
+
+  const email = (formData.get('email') as string)?.trim().toLowerCase()
+  const userType = (formData.get('userType') as string) || 'user'
+
+  if (!email || !email.includes('@')) {
+    return { error: 'Please enter a valid email address.' }
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password&type=${encodeURIComponent(userType)}`,
+  })
+
+  if (error) {
+    // Don't leak whether the email exists – always show a generic message
+    console.error('[ForgotPassword Error]', error.message)
+  }
+
+  // Always return success to avoid email enumeration
+  return {
+    success: true,
+    message: 'If an account with that email exists, a password reset link has been sent. Please check your inbox.',
+  }
+}
+
+/**
+ * Updates the user's password after they click the recovery link.
+ * Requires an active Supabase session (set by the callback route).
+ */
+export async function resetPassword(
+  _prevState: { error?: string; success?: boolean; message?: string },
+  formData: FormData
+) {
+  const supabase = await createClient()
+
+  const password = formData.get('password') as string
+  const confirmPassword = formData.get('confirmPassword') as string
+
+  if (!password || password.length < 8) {
+    return { error: 'Password must be at least 8 characters long.' }
+  }
+
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match.' }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password })
+
+  if (error) {
+    console.error('[ResetPassword Error]', error.message)
+    return { error: error.message }
+  }
+
+  return {
+    success: true,
+    message: 'Password updated successfully! Redirecting to login…',
+  }
+}
+
 export async function logout() {
   const supabase = await createClient()
   const { error } = await supabase.auth.signOut()
