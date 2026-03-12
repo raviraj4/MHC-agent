@@ -47,6 +47,33 @@ backend/
 - **Protected Routes**: Middleware-based route protection
 - **Password Validation**: Real-time strength validation with visual feedback
 
+### Password Recovery Flow (Forgot / Reset Password)
+
+**Routes added:**
+| Route | Purpose |
+|---|---|
+| `/auth/forgot-password` | Email form — sends a Supabase password-reset link |
+| `/auth/reset-password` | New-password form — shown after clicking the emailed link |
+
+**Server actions** (`app/auth/actions.ts`):
+- `forgotPassword` — calls `supabase.auth.resetPasswordForEmail()` with a `redirectTo` that routes through `/auth/callback` → `/auth/reset-password`. Returns a generic success to prevent email enumeration.
+- `resetPassword` — calls `supabase.auth.updateUser({ password })` using the session that the callback exchange created. Validates length + confirmation match server-side.
+
+**Callback** (`app/auth/callback/route.ts`):
+Updated to read the `next` and `type` query params so it can redirect password-recovery tokens directly to `/auth/reset-password?type=<userType>`.
+
+**Scalability for multiple user types:**
+Both actions and pages accept a `userType` parameter (`user` | `professional` | `organisation`). It flows through the whole chain:
+1. Forgot-password page reads `?userType=` from the URL (defaults to `user`).
+2. The reset email's `redirectTo` includes `&type=<userType>`.
+3. The callback forwards `type` to the reset-password page.
+4. Post-reset routing can branch on `type` (e.g. redirect pros to a different dashboard).
+
+To add a new role, pass `?userType=newRole` when linking to `/auth/forgot-password` — no code changes required.
+
+**Login page** (`app/auth/login/page.tsx`):
+Added a "Forgot password?" link below the password field.
+
 ##  UI/UX Features
 
 ### Authentication Forms

@@ -88,7 +88,6 @@ export default function AppLayout({
 
           {/* Divider */}
           <div className="mx-5 mt-5 h-px bg-[var(--border)]" />
-
           {/* Chat history */}
           <div className="flex-1 overflow-y-auto px-3 pt-4">
             <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--muted-foreground)]">
