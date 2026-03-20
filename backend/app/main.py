@@ -120,7 +120,7 @@ MODEL_PROFILES = {
 if MODEL not in MODEL_PROFILES:
     MODEL_PROFILES[MODEL] = MODEL_PROFILES.get("asa", {}).copy()
 
-OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").strip()
 OLLAMA_API_BASE = f"{OLLAMA_BASE_URL}/api"
 DATABASE_URL = "sqlite:///./local.db"
 engine = create_engine(DATABASE_URL, echo=False)
