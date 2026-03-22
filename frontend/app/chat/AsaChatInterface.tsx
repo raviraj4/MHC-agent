@@ -17,6 +17,8 @@ interface Message {
 
 interface ChatInterfaceProps {
   userId?: string;
+  onMessageSent?: () => void;
+  canSendMessage?: () => boolean;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
@@ -36,8 +38,8 @@ const DEMO_PROMPTS = [
   "I'm feeling stuck with...",
 ];
 
-export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps) {
-  void _userId;
+export default function AsaChatInterface({ userId: _userId, onMessageSent, canSendMessage }: ChatInterfaceProps) {
+  const userId = _userId;
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -142,6 +144,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
     if (!input.trim()) return;
     if (isLoading) return;
     if (isConnected === false) return;
+    if (canSendMessage && !canSendMessage()) return;
 
     setIsLoading(true);
     const userMsg: Message = {
@@ -193,6 +196,9 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
       updateMessageStatus(userMsg.id, "sent");
       appendMessage(assistantMsg);
 
+      // Call callback to track demo usage
+      onMessageSent?.();
+
       // persist conversation id if returned
       if (j.conversation_id) {
         setConversationId(j.conversation_id);
@@ -238,13 +244,15 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
       {/* Header with back arrow */}
       <header className="relative z-10 border-b border-[var(--border)] glass">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-          <button
-            onClick={() => router.push("/dashboard")}
-            aria-label="Back to dashboard"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+          {userId && (
+            <button
+              onClick={() => router.push("/dashboard")}
+              aria-label="Back to dashboard"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
           <div className="flex-1">
             <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Chat with ASA</p>
             <h2 className="text-lg font-semibold">Your wellbeing companion</h2>

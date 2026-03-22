@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
   // In the middleware, update the redirect path:
 if (
   !user &&
+  request.nextUrl.pathname !== '/' &&
   !request.nextUrl.pathname.startsWith('/auth') &&
   !request.nextUrl.pathname.startsWith('/_next') &&
   !request.nextUrl.pathname.startsWith('/favicon.ico')
