@@ -16,6 +16,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     messages: List[ChatMessage]
+    preferred_provider: Optional[str] = None  # "groq", "ollama", or None for auto
 
 class ChatResponse(BaseModel):
     conversation_id: str 

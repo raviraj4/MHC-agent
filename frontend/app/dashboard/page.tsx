@@ -9,14 +9,13 @@ import type { MoodCheckin } from '@/types'
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/auth/login')
   }
-
-  const user = session.user
 
   // Fetch profile, month's mood check-ins, and today's check-in in parallel
   const now = new Date()

@@ -17,6 +17,8 @@ interface Message {
 
 interface ChatInterfaceProps {
   userId?: string;
+  onMessageSent?: () => void;
+  canSendMessage?: () => boolean;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
@@ -36,8 +38,8 @@ const DEMO_PROMPTS = [
   "I'm feeling stuck with...",
 ];
 
-export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps) {
-  void _userId;
+export default function AsaChatInterface({ userId: _userId, onMessageSent, canSendMessage }: ChatInterfaceProps) {
+  const userId = _userId;
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -45,41 +47,64 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [hasCheckedHealth, setHasCheckedHealth] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [useLocalMode, setUseLocalMode] = useState(false);  // "local" = Ollama, false = Groq (online)
 
   const failuresRef = useRef(0);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const mountedRef = useRef(true);
 
-  // Load conversationId from localStorage
+  // Load conversationId and mode preference from localStorage
   useEffect(() => {
     mountedRef.current = true;
     const saved = localStorage.getItem("conversation_id");
     if (saved) setConversationId(saved);
+    
+    const savedMode = localStorage.getItem("use_local_mode");
+    if (savedMode !== null) setUseLocalMode(JSON.parse(savedMode));
+    
     return () => {
       mountedRef.current = false;
     };
   }, []);
 
-  // Health polling
+  // Health polling - only check when in local mode
   useEffect(() => {
+    // If in online mode, skip health checks
+    if (!useLocalMode) {
+      setHasCheckedHealth(true);
+      setIsConnected(null);  // Don't show status in online mode
+      return;
+    }
+    
     let intervalId: number | null = null;
     const check = async () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT);
+      
       try {
         const res = await fetch(HEALTH_URL, { signal: controller.signal });
         clearTimeout(timeout);
+        
+        // Always consume response body to prevent memory leaks
+        const text = await res.text();
+        
         if (!res.ok) {
           failuresRef.current += 1;
         } else {
-          const j = await res.json().catch(() => ({}));
-          // Consider connected if backend responds ok OR json.ok === true OR ollama_running === true
-          const connected = j.ok === true || j.ollama_running === true;
-          if (connected) failuresRef.current = 0;
-          else failuresRef.current += 1;
+          try {
+            const j = JSON.parse(text);
+            // Consider connected if backend responds ok OR json.ok === true OR ollama_running === true
+            const connected = j.ok === true || j.ollama_running === true;
+            failuresRef.current = connected ? 0 : failuresRef.current + 1;
+          } catch {
+            // JSON parse failed but body was consumed
+            failuresRef.current += 1;
+          }
         }
       } catch {
+        // Network error or abort
+        clearTimeout(timeout);
         failuresRef.current += 1;
       } finally {
         const nowOffline = failuresRef.current >= FAILURES_TO_OFFLINE;
@@ -102,7 +127,7 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
     return () => {
       if (intervalId) window.clearInterval(intervalId);
     };
-  }, []);
+  }, [useLocalMode]);
 
   // scroll to bottom on messages change
   useEffect(() => {
@@ -137,11 +162,13 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
     textareaRef.current?.focus();
   };
 
-  // send message to backend expecting { conversation_id?, messages: [{role,content}] }
+  // send message to backend expecting { conversation_id?, messages: [{role,content}], preferred_provider? }
   const send = async () => {
     if (!input.trim()) return;
     if (isLoading) return;
-    if (isConnected === false) return;
+    // Only block sending if not connected AND not in online mode
+    if (isConnected === false && !useLocalMode) return;
+    if (canSendMessage && !canSendMessage()) return;
 
     setIsLoading(true);
     const userMsg: Message = {
@@ -161,10 +188,15 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
       { role: userMsg.role, content: userMsg.content },
     ];
 
-    const payload = {
+    const payload: any = {
       conversation_id: conversationId ?? undefined,
       messages: payloadMessages,
     };
+    
+    // Add preferred provider if in local mode
+    if (useLocalMode) {
+      payload.preferred_provider = "ollama";
+    }
 
     try {
       const res = await fetch(CHAT_URL, {
@@ -192,6 +224,9 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
       // update state
       updateMessageStatus(userMsg.id, "sent");
       appendMessage(assistantMsg);
+
+      // Call callback to track demo usage
+      onMessageSent?.();
 
       // persist conversation id if returned
       if (j.conversation_id) {
@@ -231,33 +266,72 @@ export default function AsaChatInterface({ userId: _userId }: ChatInterfaceProps
     );
   }
 
-  const isOffline = hasCheckedHealth && isConnected === false;
+  const isOffline = hasCheckedHealth && isConnected === false && useLocalMode;
+  const showOnlineStatus = useLocalMode;  // Only show online/offline status in local mode
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-[var(--background)] ambient-mesh text-[var(--foreground)]">
       {/* Header with back arrow */}
       <header className="relative z-10 border-b border-[var(--border)] glass">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-          <button
-            onClick={() => router.push("/dashboard")}
-            aria-label="Back to dashboard"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+          {userId && (
+            <button
+              onClick={() => router.push("/dashboard")}
+              aria-label="Back to dashboard"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
           <div className="flex-1">
             <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Chat with ASA</p>
             <h2 className="text-lg font-semibold">Your wellbeing companion</h2>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${isOffline ? 'bg-amber-400' : isConnected ? 'bg-emerald-400' : 'bg-[var(--muted)]'}`} />
-            <span className="text-xs text-[var(--muted-foreground)]">{isOffline ? 'Offline' : isConnected ? 'Online' : 'Checking…'}</span>
+          
+          {/* Compact local/online toggle */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-[var(--muted)]/40 rounded-lg p-1.5">
+              <button
+                onClick={() => {
+                  setUseLocalMode(false);
+                  localStorage.setItem("use_local_mode", JSON.stringify(false));
+                }}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition ${
+                  !useLocalMode
+                    ? 'bg-[var(--primary)] text-white'
+                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                }`}
+              >
+                Online
+              </button>
+              <button
+                onClick={() => {
+                  setUseLocalMode(true);
+                  localStorage.setItem("use_local_mode", JSON.stringify(true));
+                }}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition ${
+                  useLocalMode
+                    ? 'bg-[var(--primary)] text-white'
+                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                }`}
+              >
+                Local
+              </button>
+            </div>
+            
+            {/* Status indicator - only in local mode */}
+            {showOnlineStatus && (
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${isOffline ? 'bg-amber-400' : isConnected ? 'bg-emerald-400' : 'bg-[var(--muted)]'}`} />
+                <span className="text-xs text-[var(--muted-foreground)]">{isOffline ? 'Offline' : isConnected ? 'Online' : 'Checking…'}</span>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Offline Banner */}
-      {isOffline && (
+      {/* Offline Banner - only show in local mode */}
+      {isOffline && showOnlineStatus && (
         <div className="px-4 py-3 bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800">
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -18,8 +18,11 @@ export default async function RootLayout({
 }) {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Convert user to minimal session object for AuthProvider
+  const session = user ? { user } as any : null
 
   return (
     <html lang="en" suppressHydrationWarning className={manrope.variable}>
