@@ -6,10 +6,14 @@ export default async function Home() {
   const supabase = await createClient()
   
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-  const user = session?.user
+  if (authError || !user) {
+    // User not authenticated, show home page
+    return <HomeChat />
+  }
 
   if (user) {
     const { data: profile } = await supabase
