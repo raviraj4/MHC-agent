@@ -43,10 +43,78 @@ function toClientEntry(db: DbJournalEntry): JournalEntry {
 
 const moodOptions = ["😄", "😊", "😐", "😔", "😢"];
 
+type JournalTemplate = {
+  id: string;
+  name: string;
+  subtitle: string;
+  suggestedTitle: string;
+  content: string;
+};
+
+const journalTemplates: JournalTemplate[] = [
+  {
+    id: "gratitude",
+    name: "Gratitude",
+    subtitle: "Notice small wins and positives",
+    suggestedTitle: "Gratitude Reflection",
+    content:
+      "Today I am grateful for:\n1. \n2. \n3. \n\nA moment that made me smile:\n\nOne thing I appreciate about myself today:\n",
+  },
+  {
+    id: "swot",
+    name: "SWOT Analysis",
+    subtitle: "Map strengths and growth areas",
+    suggestedTitle: "Personal SWOT Reflection",
+    content:
+      "Strengths:\n- \n\nWeaknesses:\n- \n\nOpportunities:\n- \n\nThreats:\n- \n\nMy next action step:\n",
+  },
+  {
+    id: "thought-record",
+    name: "CBT Thought Record",
+    subtitle: "Reframe difficult thoughts",
+    suggestedTitle: "Thought Record",
+    content:
+      "Situation:\n\nAutomatic thought:\n\nEmotion (0-100):\n\nEvidence for the thought:\n- \n\nEvidence against the thought:\n- \n\nBalanced thought:\n\nEmotion after reframing (0-100):\n",
+  },
+  {
+    id: "daily-checkin",
+    name: "Daily Check-in",
+    subtitle: "Track mood, energy, and stress",
+    suggestedTitle: "Daily Check-in",
+    content:
+      "How I feel right now:\n\nWhat is influencing this feeling:\n\nWhat I need today:\n\nOne kind thing I can do for myself:\n",
+  },
+  {
+    id: "self-compassion",
+    name: "Self-Compassion",
+    subtitle: "Respond to yourself with care",
+    suggestedTitle: "Self-Compassion Note",
+    content:
+      "What I am struggling with:\n\nWhat I would say to a friend in this same situation:\n\nA kind statement to myself:\n\nOne gentle next step:\n",
+  },
+  {
+    id: "weekly-review",
+    name: "Weekly Review",
+    subtitle: "Reflect on patterns and progress",
+    suggestedTitle: "Weekly Reflection",
+    content:
+      "A win from this week:\n\nA challenge I faced:\n\nWhat I learned about myself:\n\nWhat I want to focus on next week:\n",
+  },
+  {
+    id: "friend-circle-check",
+    name: "Friend Circle Check",
+    subtitle: "Spot high-drain friendships and protect your energy",
+    suggestedTitle: "Friendship Energy Audit",
+    content:
+      "Friend Name: ______________________\nDate / Interaction: ______________________\nType of Interaction: (call, hangout, text, social) ______________________\n\n1️⃣ Respect & Support Check\nQuestion\tYes / No / Sometimes\tNotes / Examples\nDid they respect my opinions and choices?\t\t\nDid they acknowledge my achievements without envy or subtle insult?\t\t\nDid they honor boundaries I set (time, topics, personal space)?\t\t\nDid they make me feel energized, understood, or supported?\t\t\n\n2️⃣ Red Flag Detection\nRed Flag\tObserved? (Y/N)\tNotes / Examples\nSubtle insult or snide comment\t\t\nPassive aggression / guilt-tripping\t\t\nEnergy drain after interaction\t\t\nDisrespect of goals, sacrifices, or lifestyle\t\t\nPushiness / trying to control me\t\t\n\n3️⃣ Quick Reflection\n\nHow did I feel during/after the interaction?\n\nWould I prioritize this friend if I had limited energy? (Yes / Maybe / No)\n\nAction next:\nContinue interaction as usual ✅\nReduce energy / limit personal info ⚠️\nStep back / disengage ❌\n\n4️⃣ Notes for Long-Term Pattern\nCheck weekly or monthly:\nIf multiple red flags appear repeatedly → mark friendship as high-drain / low-respect\nIf mostly \"Yes\" → maintain / invest energy\n",
+  },
+];
+
 export function JournalClient() {
   const router = useRouter();
   const [view, setView] = useState<"list" | "new">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -80,6 +148,17 @@ export function JournalClient() {
       );
     });
   }, [entries, searchQuery]);
+
+  const selectedTemplate = useMemo(
+    () => journalTemplates.find((template) => template.id === selectedTemplateId) ?? null,
+    [selectedTemplateId]
+  );
+
+  const applyTemplate = (template: JournalTemplate) => {
+    setSelectedTemplateId(template.id);
+    setNewTitle((currentTitle) => (currentTitle.trim() ? currentTitle : template.suggestedTitle));
+    setNewContent(template.content);
+  };
 
   const handleSaveEntry = async () => {
     if (!newTitle.trim() && !newContent.trim()) return;
@@ -144,6 +223,7 @@ export function JournalClient() {
 
   const handleEditEntry = (entry: JournalEntry) => {
     setEditingId(entry.id);
+    setSelectedTemplateId(null);
     setNewTitle(entry.title);
     setNewContent(entry.content);
     setSelectedMood(entry.mood);
@@ -184,6 +264,7 @@ export function JournalClient() {
             <button
               onClick={() => {
                 setEditingId(null);
+                setSelectedTemplateId(null);
                 setNewTitle("");
                 setNewContent("");
                 setSelectedMood(undefined);
@@ -226,29 +307,21 @@ export function JournalClient() {
           </div>
 
           <section className="space-y-3">
-            <h3 className="text-xs font-medium text-[var(--muted-foreground)]">Prompts</h3>
+            <h3 className="text-xs font-medium text-[var(--muted-foreground)]">Journal Templates</h3>
             <div className="grid gap-3 md:grid-cols-3">
-              {[ 
-                {
-                  title: "What made you smile today?",
-                  subtitle: "Gratitude prompt",
-                },
-                {
-                  title: "What challenge did you overcome?",
-                  subtitle: "Reflection prompt",
-                },
-                {
-                  title: "What do you need right now?",
-                  subtitle: "Self-care prompt",
-                },
-              ].map((prompt) => (
+              {journalTemplates.map((template) => (
                 <button
-                  key={prompt.title}
-                  onClick={() => setView("new")}
+                  key={template.id}
+                  onClick={() => {
+                    setEditingId(null);
+                    setSelectedMood(undefined);
+                    applyTemplate(template);
+                    setView("new");
+                  }}
                   className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-left transition hover:bg-[var(--primary)]/10 hover:border-[var(--primary)]/30"
                 >
-                  <p className="font-medium text-sm">{prompt.title}</p>
-                  <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{prompt.subtitle}</p>
+                  <p className="font-medium text-sm">{template.name}</p>
+                  <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{template.subtitle}</p>
                 </button>
               ))}
             </div>
@@ -345,6 +418,43 @@ export function JournalClient() {
               />
 
               <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-[var(--muted-foreground)]">Choose a template</p>
+                  {selectedTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateId(null)}
+                      className="text-xs font-medium text-[var(--primary)] hover:underline"
+                    >
+                      Clear template
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {journalTemplates.map((template) => {
+                    const isActive = selectedTemplateId === template.id;
+                    return (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => applyTemplate(template)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                          isActive
+                            ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                            : "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]/80"
+                        }`}
+                      >
+                        {template.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedTemplate && (
+                  <p className="text-xs text-[var(--muted-foreground)]">{selectedTemplate.subtitle}</p>
+                )}
+              </div>
+
+              <div className="space-y-3">
                 <p className="text-sm text-[var(--muted-foreground)]">How are you feeling?</p>
                 <div className="flex flex-wrap gap-3">
                   {moodOptions.map((emoji) => {
@@ -392,6 +502,7 @@ export function JournalClient() {
                 <button
                   onClick={() => {
                     setView("list");
+                    setSelectedTemplateId(null);
                     setNewTitle("");
                     setNewContent("");
                     setSelectedMood(undefined);

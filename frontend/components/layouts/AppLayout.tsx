@@ -23,6 +23,7 @@ export default function AppLayout({
     { href: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
     { href: '/chat', label: 'Chat with ASA', icon: HiOutlineChatAlt2 },
     { href: '/journal', label: 'Journal', icon: HiOutlineBookOpen },
+    { href: '/playground', label: 'CBT Playground', icon: IoSparkles },
   ]
 
   return (
