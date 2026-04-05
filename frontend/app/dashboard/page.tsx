@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { HiOutlineChatBubbleOvalLeft } from 'react-icons/hi2'
+import { IoSparkles } from 'react-icons/io5'
 import AppLayout from '@/components/layouts/AppLayout'
 import DashboardMoodSection from '@/components/mood/DashboardMoodSection'
 import { createClient } from '@/utils/supabase/server'
@@ -78,7 +79,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Action cards */}
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {/* Chat Card */}
             <Link
               href="/chat"
@@ -120,6 +121,29 @@ export default async function DashboardPage() {
                 </div>
                 <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-[var(--primary)]">
                   Open journal
+                  <span className="transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden>→</span>
+                </div>
+              </div>
+            </Link>
+
+            {/* CBT Playground Card */}
+            <Link
+              href="/playground"
+              className="animate-fade-in-up stagger-3 group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6 shadow-lg shadow-emerald-500/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/25"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+              <div className="relative">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-sm">
+                  <IoSparkles className="text-2xl" />
+                </div>
+                <div className="mt-5">
+                  <h2 className="text-lg font-bold text-white">CBT Playground</h2>
+                  <p className="mt-1.5 text-sm leading-relaxed text-white/80">
+                    Explore guided activities like role playing and music therapy.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-white">
+                  Open playground
                   <span className="transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden>→</span>
                 </div>
               </div>
