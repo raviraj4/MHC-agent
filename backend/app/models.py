@@ -34,10 +34,22 @@ class EmergencyContact(BaseModel):
     consent: bool = False
     is_primary: bool = True
    
-class Conversations(SQLModel):
-     id: Optional[str] = Field(default=None, primary_key=True)
-     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-     title: Optional[str] = None
+class Conversations(SQLModel, table=True):
+    __tablename__ = "conversations"
+    id: Optional[str] = Field(default=None, primary_key=True)
+    user_id: str
+    title: Optional[str] = "New Conversation"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Messages(SQLModel, table=True):
+    __tablename__ = "messages"
+    id: Optional[str] = Field(default=None, primary_key=True)
+    conversation_id: str = Field(foreign_key="conversations.id")
+    user_id: str
+    role: str
+    content: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
      
      
      

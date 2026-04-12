@@ -28,7 +28,12 @@ const supabase = await createClient()
   const { data: authData, error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    return { error: true, message: 'authentication failed! (check password/email) ' }
+    // Check for specific email unverified error from Supabase
+    const errMsg = error.message.toLowerCase()
+    if (errMsg.includes('email not confirmed') || errMsg.includes('email not verified') || error.code === 'email_not_confirmed') {
+      return { error: true, message: 'Email not verified. Please check your inbox for a confirmation link.' }
+    }
+    return { error: true, message: 'Authentication failed! (check password/email)' }
   }
 
   // Check if user has completed onboarding
