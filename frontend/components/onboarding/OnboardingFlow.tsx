@@ -137,8 +137,12 @@ export function OnboardingFlow({
     }
 
     setError(null)
-    if (step === 4 && !validateEmergencyContact()) {
-      return
+    if (step === 4) {
+      if (!validateEmergencyContact()) return
+      if (!emergencyContact.consent) {
+        setError("Please check the consent box to proceed.")
+        return
+      }
     }
 
     setError(null)
@@ -448,7 +452,7 @@ export function OnboardingFlow({
           onClick={handleContinue}
           disabled={
             (step === 1 && !name.trim()) ||
-            (step === 4 && (!emergencyContact.name.trim() || !emergencyContact.phone.trim() || !emergencyContact.consent)) ||
+            (step === 4 && (!emergencyContact.name.trim() || !emergencyContact.phone.trim())) ||
             isPending
           }
           className={`inline-flex items-center rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60 ${gradientPrimary}`}

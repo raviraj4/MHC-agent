@@ -343,8 +343,9 @@ export default function AsaChatInterface({ userId: _userId, onMessageSent, canSe
         try {
           localStorage.setItem("conversation_id", j.conversation_id);
           if (isNew) {
-            console.log("Dispatching chat-updated event for new persistent conversation");
+            console.log("Dispatching chat-updated and storage events for new persistent conversation");
             window.dispatchEvent(new Event('chat-updated'));
+            window.dispatchEvent(new Event('storage')); // Force sidebar re-fetch
           }
         } catch (e) {
           console.error("Storage error:", e);

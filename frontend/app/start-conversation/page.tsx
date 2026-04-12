@@ -33,6 +33,12 @@ export default async function StartConversationPage() {
     .eq('id', user.id)
     .maybeSingle()
 
+  const { data: emergencyContact } = await supabase
+    .from('emergency_contacts')
+    .select('name, relationship, phone, email, consent')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
   if (profile?.onboarding_completed) {
     redirect('/dashboard')
   }
@@ -57,7 +63,7 @@ export default async function StartConversationPage() {
           initialName={profile?.full_name || profile?.user_name || ''}
           initialGoals={preferences?.goals || []}
           initialActivities={preferences?.activities || []}
-          initialEmergencyContact={preferences?.emergencyContact}
+          initialEmergencyContact={emergencyContact || {}}
         />
       </div>
     </div>
