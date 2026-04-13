@@ -102,17 +102,23 @@ export default function ConsolationTrainer() {
         setIsLoading(true)
 
         try {
+            const userName = session?.user?.email?.split('@')[0] ?? 'User'
+            const roleName = selectedScenario?.title ?? 'Assistant'
+            
             const reviewPrompt = `
                 You are a senior behavioral therapist and communication coach. 
-                Below is a transcript of a roleplay session where the user was practicing responding to a specific scenario: "${selectedScenario?.title}".
+                Below is a transcript of a roleplay session where the user (${userName}) was practicing responding to a specific scenario: "${selectedScenario?.title}".
                 
                 The user's goal was: ${selectedScenario?.critiqueFocus}
                 
                 TRANSCRIPT:
-                ${messages.filter(m => m.role !== 'system').map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}
+                ${messages.filter(m => m.role !== 'system').map(m => {
+                    const label = m.role === 'user' ? userName : roleName;
+                    return `${label.toUpperCase()}: ${m.content}`;
+                }).join('\n')}
 
                 INSTRUCTIONS:
-                1. Provide a formal, constructive review of the user's performance.
+                1. Provide a formal, constructive review of ${userName}'s performance.
                 2. Highlight specifically where they went wrong or where their communication could be improved.
                 3. Mention what they did well.
                 4. Be direct, professional, and therapeutic.
