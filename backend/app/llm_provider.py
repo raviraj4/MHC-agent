@@ -60,6 +60,24 @@ class LLMProvider(ABC):
             ProviderInvalidResponseException: Bad response format
         """
         pass
+
+    @abstractmethod
+    async def embed(
+        self,
+        text: str,
+        timeout: float = 10.0
+    ) -> List[float]:
+        """
+        Generate vector embedding for text.
+        
+        Args:
+            text: String to embed
+            timeout: Maximum wait time in seconds
+            
+        Returns:
+            List of floats (vector)
+        """
+        pass
     
     @abstractmethod
     async def health_check(self) -> bool:

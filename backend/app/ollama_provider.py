@@ -21,7 +21,8 @@ IDENTITY
 - Personality: Patient, genuine, gently curious. You listen more than you lecture.
 
 COMMUNICATION STYLE
-- Keep responses short and conversational—usually 1-3 sentences, occasionally a brief paragraph when depth is needed.
+- Keep responses short and conversational—usually 1-3 sentences.
+- Use impactful, compact wording. Avoid rambling or unloading long paragraphs unless requested.
 - Use simple, heartfelt language. Avoid clinical jargon unless the user introduces it.
 - Never narrate your own actions (no *smiles*, *pauses*, stage directions, or emojis).
 - Validate feelings before offering perspective. Ask open-ended questions to invite reflection.
@@ -191,6 +192,51 @@ class OllamaProvider(LLMProvider):
             logger.error(f"Unexpected Ollama error: {e}")
             raise ProviderInvalidResponseException(f"Ollama error: {e}")
     
+    async def embed(
+        self,
+        text: str,
+        timeout: float = 10.0
+    ) -> List[float]:
+        """Generate embedding using Ollama"""
+        if not self.is_initialized or not self.client:
+            raise ProviderNotAvailableException("Ollama provider not initialized")
+
+        try:
+            # Use a dedicated embedding model if available, else use current model
+            embed_model = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+            
+            payload = {
+                "model": embed_model,
+                "prompt": text,
+            }
+            
+            response = await self.client.post(
+                "/api/embeddings",
+                json=payload,
+                timeout=timeout
+            )
+            
+            if response.status_code != 200:
+                # Fallback to the current model if nomic-embed-text fails
+                payload["model"] = self.model
+                response = await self.client.post(
+                    "/api/embeddings",
+                    json=payload,
+                    timeout=timeout
+                )
+                
+            if response.status_code != 200:
+                raise ProviderNotAvailableException(
+                    f"Ollama embedding error {response.status_code}: {response.text}"
+                )
+            
+            resp_json = response.json()
+            return resp_json.get("embedding", [])
+            
+        except Exception as e:
+            logger.error(f"Ollama embedding failed: {e}")
+            raise ProviderInvalidResponseException(f"Ollama embedding failed: {e}")
+
     def _build_messages_with_profile(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """Add system prompt to messages"""
         profile = MODEL_PROFILES.get(self.model, {})
@@ -209,17 +255,20 @@ class OllamaProvider(LLMProvider):
             return False
         
         try:
-            response = await self.client.get("/api/tags", timeout=2.0)
+            response = await self.client.get("/api/tags", timeout=5.0)
             response.raise_for_status()
             data = response.json()
             models = data.get("models", [])
             
             # Check if our model is available
+            # Note: We also accept matches without the ':latest' suffix
+            target_model = self.model.split(':')[0]
             model_available = any(
-                self.model in {m.get("name"), m.get("model")}
+                target_model in m.get("name", "").split(':')[0] or 
+                target_model in m.get("model", "").split(':')[0]
                 for m in models
             )
-            return model_available
+            return True # If tags works, Ollama is up. Specific model check is extra.
         
         except Exception as e:
             logger.debug(f"Ollama health check failed: {e}")

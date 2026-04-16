@@ -1,1 +1,2 @@
 *.db
+/supabase_chat_migration.sql

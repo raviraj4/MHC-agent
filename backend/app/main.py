@@ -115,7 +115,11 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
     
     # Create a conversation if not provided (and if user is authenticated)
     is_new_conversation = False
-    if (not conv_id or conv_id == "conv_local_default") and user_id:
+    
+    # Transient Flag: If conversation_id is "transient_playground", we skip all DB persistence
+    is_transient = conv_id == "transient_playground"
+
+    if (not conv_id or conv_id == "conv_local_default") and user_id and not is_transient:
         is_new_conversation = True
         try:
             logger.info(f"Attempting to create a new persistent conversation for user {user_id}")
@@ -155,7 +159,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
     
     try:
         # 1. Save user message if persistent
-        if user_id and conv_id != "conv_local_default":
+        if user_id and conv_id != "conv_local_default" and not is_transient:
             last_user_msg = payload.messages[-1]
             try:
                 # Handle both dict and object types for messages
@@ -181,7 +185,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
         logger.info(f"LLM Response received from {provider_used}")
         
         # 3. Handle persistent storage tasks
-        if user_id and conv_id != "conv_local_default":
+        if user_id and conv_id != "conv_local_default" and not is_transient:
             try:
                 # A. Save assistant message
                 logger.info(f"Saving assistant message to conv {conv_id}")
@@ -232,6 +236,30 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
     except Exception as e:
         logger.error(f"Chat endpoint error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get response: {e}")
+
+
+@app.get("/api/scenarios/search")
+async def search_scenarios(query: str, threshold: float = 0.5, limit: int = 3):
+    """Search for relevant scenarios using vector similarity (RAG)"""
+    if not provider_factory:
+        raise HTTPException(status_code=500, detail="Provider not initialized")
+    
+    try:
+        # 1. Generate embedding for query
+        query_vector = await provider_factory.embed(query)
+        
+        # 2. Call Supabase RPC
+        # match_scenarios(query_embedding, match_threshold, match_count)
+        result = supabase.rpc("match_scenarios", {
+            "query_embedding": query_vector,
+            "match_threshold": threshold,
+            "match_count": limit
+        }).execute()
+        
+        return result.data
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
 
 
 @app.get("/api/conversations")

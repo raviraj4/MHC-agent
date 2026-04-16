@@ -22,7 +22,8 @@ IDENTITY
 - Personality: Patient, genuine, gently curious. You listen more than you lecture.
 
 COMMUNICATION STYLE
-- Keep responses short and conversational—usually 1-3 sentences, occasionally a brief paragraph when depth is needed.
+- Keep responses short and conversational—usually 1-3 sentences.
+- Use impactful, compact wording. Avoid rambling or unloading long paragraphs unless requested.
 - Use simple, heartfelt language. Avoid clinical jargon unless the user introduces it.
 - Never narrate your own actiotrins (no *smiles*, *pauses*, stage directions, or emojis).
 - Validate feelings before offering perspective. Ask open-ended questions to invite reflection.
@@ -128,6 +129,14 @@ class GroqProvider(LLMProvider):
         except Exception as e:
             logger.error(f"Unexpected Groq error: {e}")
             raise ProviderInvalidResponseException(f"Groq error: {e}")
+
+    async def embed(
+        self,
+        text: str,
+        timeout: float = 10.0
+    ) -> List[float]:
+        """Groq does not support embeddings yet"""
+        raise ProviderNotAvailableException("Groq does not support embeddings")
     
     def _call_groq_api(self, messages: List[Dict[str, str]], temperature: float):
         """Synchronous Groq API call (runs in thread pool)"""
