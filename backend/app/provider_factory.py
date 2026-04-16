@@ -176,6 +176,30 @@ class ProviderFactory:
                 }
         
         return status
+
+    async def embed(
+        self,
+        text: str,
+        preferred_provider: Optional[str] = None,
+    ) -> list:
+        """Get embedding with fallback"""
+        # If preferred provider specified, try it first
+        if preferred_provider and preferred_provider.lower() in self.providers:
+            provider = self.providers.get(preferred_provider.lower())
+            try:
+                return await provider.embed(text)
+            except Exception:
+                logger.warning(f"Preferred embedding provider '{preferred_provider}' failed")
+
+        # Try Ollama first for embeddings as it's the primary provider for this
+        if "ollama" in self.providers:
+            try:
+                return await self.providers["ollama"].embed(text)
+            except Exception as e:
+                logger.warning(f"Ollama embedding failed: {e}")
+
+        # If everything fails
+        raise Exception("No available provider for embeddings")
     
     async def shutdown(self):
         """Cleanup all providers"""

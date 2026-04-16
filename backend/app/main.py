@@ -238,6 +238,30 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
         raise HTTPException(status_code=500, detail=f"Failed to get response: {e}")
 
 
+@app.get("/api/scenarios/search")
+async def search_scenarios(query: str, threshold: float = 0.5, limit: int = 3):
+    """Search for relevant scenarios using vector similarity (RAG)"""
+    if not provider_factory:
+        raise HTTPException(status_code=500, detail="Provider not initialized")
+    
+    try:
+        # 1. Generate embedding for query
+        query_vector = await provider_factory.embed(query)
+        
+        # 2. Call Supabase RPC
+        # match_scenarios(query_embedding, match_threshold, match_count)
+        result = supabase.rpc("match_scenarios", {
+            "query_embedding": query_vector,
+            "match_threshold": threshold,
+            "match_count": limit
+        }).execute()
+        
+        return result.data
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
+
+
 @app.get("/api/conversations")
 async def get_conversations(authorization: Optional[str] = Header(None)):
     """Fetch user's conversations from Supabase"""

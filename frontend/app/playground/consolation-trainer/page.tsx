@@ -72,20 +72,47 @@ export default function ConsolationTrainer() {
     const [isLoading, setIsLoading] = useState(false)
     const [isFinished, setIsFinished] = useState(false)
     const [review, setReview] = useState<string | null>(null)
+    const [customQuery, setCustomQuery] = useState('')
+    const [isSearching, setIsSearching] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, review])
 
-    const startSession = (scenario: typeof SCENARIOS[0]) => {
+    const startSession = (scenario: any) => {
         setIsFinished(false)
         setReview(null)
         setSelectedScenario(scenario)
+        const systemPrompt = (scenario.initialSystem || scenario.initial_system_prompt)
+        const welcome = (scenario.welcome || scenario.welcome_message)
+        
         setMessages([
-            { role: 'system', content: scenario.initialSystem + " You are here to help the user practice empathy. Only end the session if the user explicitly asks to finish or if it naturally concludes. Use '###SESSION_COMPLETE###' only if ending." },
-            { role: 'assistant', content: scenario.welcome }
+            { role: 'system', content: systemPrompt + " You are here to help the user practice empathy. Only end the session if the user explicitly asks to finish or if it naturally concludes. Use '###SESSION_COMPLETE###' only if ending." },
+            { role: 'assistant', content: welcome }
         ])
+    }
+
+    const searchCustomScenario = async () => {
+        if (!customQuery.trim() || isSearching) return
+        
+        setIsSearching(true)
+        try {
+            const res = await fetch(`${API_BASE}/api/scenarios/search?query=${encodeURIComponent(customQuery)}`)
+            if (res.ok) {
+                const results = await res.json()
+                if (results && results.length > 0) {
+                    // Start session with the best match found via RAG
+                    startSession(results[0])
+                } else {
+                    alert("No matching scenario found. Try describing your situation differently.")
+                }
+            }
+        } catch (error) {
+            console.error('Search error:', error)
+        } finally {
+            setIsSearching(false)
+        }
     }
 
     const resetSession = () => {
@@ -104,12 +131,13 @@ export default function ConsolationTrainer() {
         try {
             const userName = session?.user?.email?.split('@')[0] ?? 'User'
             const roleName = selectedScenario?.title ?? 'Assistant'
+            const critiqueGoal = selectedScenario?.critiqueFocus || selectedScenario?.critique_focus
             
             const reviewPrompt = `
                 You are a senior behavioral therapist and communication coach. 
                 Below is a transcript of a roleplay session where the user (${userName}) was practicing responding to a specific scenario: "${selectedScenario?.title}".
                 
-                The user's goal was: ${selectedScenario?.critiqueFocus}
+                The user's goal was: ${critiqueGoal}
                 
                 TRANSCRIPT:
                 ${messages.filter(m => m.role !== 'system').map(m => {
@@ -212,6 +240,42 @@ export default function ConsolationTrainer() {
                             Practice responding to others in difficult emotional situations. 
                             These sessions are private and not saved to your history.
                         </p>
+                    </div>
+
+                    {/* Custom RAG Search Box */}
+                    <div className="p-1.5 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-xl ring-1 ring-amber-500/10">
+                        <div className="flex gap-2">
+                            <input 
+                                value={customQuery}
+                                onChange={(e) => setCustomQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && searchCustomScenario()}
+                                placeholder="Describe a custom situation... (e.g. 'friend losing job')"
+                                className="flex-1 bg-transparent px-4 py-3 text-sm focus:outline-none placeholder:opacity-50"
+                            />
+                            <button 
+                                onClick={searchCustomScenario}
+                                disabled={isSearching || !customQuery.trim()}
+                                className="px-6 py-3 bg-amber-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                            >
+                                {isSearching ? (
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Sparkles className="w-4 h-4" />
+                                )}
+                                Find Scenario
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-[var(--border)]"></div>
+                        </div>
+                        <div className="relative flex justify-center">
+                            <span className="bg-[var(--background)] px-3 text-xs font-bold uppercase tracking-widest text-[var(--muted-foreground)] opacity-50">
+                                or pick from library
+                            </span>
+                        </div>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
