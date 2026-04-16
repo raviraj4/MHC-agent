@@ -76,6 +76,8 @@ export default function ConsolationTrainer() {
     const [isSearching, setIsSearching] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
 
+    const SUGGESTED_TAGS = ['Grief', 'Work Conflict', 'Harassment', 'Health Scare', 'Family Drama', 'Social Pressure']
+
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, review])
@@ -243,27 +245,46 @@ export default function ConsolationTrainer() {
                     </div>
 
                     {/* Custom RAG Search Box */}
-                    <div className="p-1.5 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-xl ring-1 ring-amber-500/10">
-                        <div className="flex gap-2">
-                            <input 
-                                value={customQuery}
-                                onChange={(e) => setCustomQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && searchCustomScenario()}
-                                placeholder="Describe a custom situation... (e.g. 'friend losing job')"
-                                className="flex-1 bg-transparent px-4 py-3 text-sm focus:outline-none placeholder:opacity-50"
-                            />
-                            <button 
-                                onClick={searchCustomScenario}
-                                disabled={isSearching || !customQuery.trim()}
-                                className="px-6 py-3 bg-amber-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-amber-500/20"
-                            >
-                                {isSearching ? (
-                                    <RefreshCw className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Sparkles className="w-4 h-4" />
-                                )}
-                                Find Scenario
-                            </button>
+                    <div className="space-y-4">
+                        <div className="p-1.5 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-xl ring-1 ring-amber-500/10 focus-within:ring-amber-500/30 transition-all">
+                            <div className="flex gap-2">
+                                <input 
+                                    value={customQuery}
+                                    onChange={(e) => setCustomQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && searchCustomScenario()}
+                                    placeholder="Describe a custom situation... (e.g. 'friend losing job')"
+                                    className="flex-1 bg-transparent px-4 py-3 text-sm focus:outline-none placeholder:opacity-50"
+                                />
+                                <button 
+                                    onClick={searchCustomScenario}
+                                    disabled={isSearching || !customQuery.trim()}
+                                    className="px-6 py-3 bg-amber-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                                >
+                                    {isSearching ? (
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="w-4 h-4" />
+                                    )}
+                                    Find
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center justify-center gap-2 px-2">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)] opacity-50">Try:</span>
+                            {SUGGESTED_TAGS.map(tag => (
+                                <button
+                                    key={tag}
+                                    onClick={() => {
+                                        setCustomQuery(tag)
+                                        // Slight delay to allow state update before firing search
+                                        setTimeout(searchCustomScenario, 50)
+                                    }}
+                                    className="px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/10 text-[10px] font-bold text-amber-600/70 hover:bg-amber-500/10 hover:text-amber-500 transition-all uppercase tracking-tighter"
+                                >
+                                    {tag}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
@@ -310,16 +331,16 @@ export default function ConsolationTrainer() {
     return (
         <div className="flex flex-col h-screen bg-[var(--background)] text-[var(--foreground)]">
             {/* Dedicated Theme Header */}
-            <header className="p-4 border-b border-[var(--border)] bg-[var(--card)] flex items-center justify-between">
+            <header className="p-4 border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <button onClick={resetSession} className="p-2 hover:bg-[var(--muted)] rounded-xl transition-colors">
-                        <ArrowLeft className="w-5 h-5 text-amber-500" />
+                    <button onClick={resetSession} className="p-2 hover:bg-[var(--muted)] rounded-xl transition-all active:scale-95 group">
+                        <ArrowLeft className="w-5 h-5 text-amber-500 group-hover:-translate-x-0.5 transition-transform" />
                     </button>
                     <div>
                         <h2 className="font-bold text-sm tracking-tight">{selectedScenario.title}</h2>
                         <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-amber-500/80">Practice Mode</span>
+                            <span className="text-[10px] uppercase font-black tracking-widest text-amber-500/80">Active Session</span>
                         </div>
                     </div>
                 </div>
@@ -344,14 +365,14 @@ export default function ConsolationTrainer() {
             </header>
 
             {/* Session Chat */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 max-w-3xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 max-w-3xl mx-auto w-full scroll-smooth">
                 {messages.filter(m => m.role !== 'system').map((m, i) => (
-                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                         <div className={`
-                            max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm
+                            max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all
                             ${m.role === 'user' 
-                                ? 'bg-amber-500 text-white font-medium' 
-                                : 'bg-[var(--card)] border border-[var(--border)]'}
+                                ? 'bg-amber-600 text-white font-medium rounded-tr-none' 
+                                : 'bg-[var(--card)] border border-[var(--border)] rounded-tl-none'}
                         `}>
                             {m.content}
                         </div>
@@ -359,21 +380,26 @@ export default function ConsolationTrainer() {
                 ))}
                 
                 {review && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="bg-amber-500/5 border-2 border-amber-500/20 rounded-2xl p-6 space-y-4">
-                            <div className="flex items-center gap-3 text-amber-600">
-                                <Info className="w-6 h-6" />
-                                <h3 className="font-bold text-lg">Performance Review</h3>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+                        <div className="bg-amber-500/5 border-2 border-amber-500/20 rounded-2xl p-6 space-y-4 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-5">
+                                <Sparkles className="w-24 h-24 text-amber-500" />
                             </div>
-                            <div className="text-sm leading-relaxed text-[var(--foreground)] italic">
+                            <div className="flex items-center gap-3 text-amber-600">
+                                <div className="p-2 rounded-lg bg-amber-500/10">
+                                    <Info className="w-5 h-5" />
+                                </div>
+                                <h3 className="font-bold text-lg tracking-tight">Coach Feedback</h3>
+                            </div>
+                            <div className="text-sm leading-relaxed text-[var(--foreground)] italic border-l-2 border-amber-500/30 pl-4 py-1">
                                 "{review}"
                             </div>
                             <div className="pt-2 flex justify-end">
                                 <button 
                                     onClick={resetSession}
-                                    className="text-xs font-bold uppercase tracking-widest text-amber-600 hover:text-amber-700 transition-colors"
+                                    className="px-4 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-500/10"
                                 >
-                                    Try Another Scenario →
+                                    Select New Scenario →
                                 </button>
                             </div>
                         </div>
