@@ -28,6 +28,27 @@ class ProviderFactory:
         
         self.providers: Dict[str, LLMProvider] = {}
         self.provider_status: Dict[str, bool] = {}
+
+    async def _ensure_provider_ready(self, provider_name: str) -> Optional[LLMProvider]:
+        """Return an initialized provider, trying lazy re-init if needed."""
+        provider = self.providers.get(provider_name)
+        if not provider:
+            logger.error(f"Provider '{provider_name}' not found")
+            return None
+
+        if self.provider_status.get(provider_name, False):
+            return provider
+
+        try:
+            logger.info(f"Provider '{provider_name}' not ready; attempting re-initialization")
+            await provider.initialize()
+            self.provider_status[provider_name] = True
+            logger.info(f"Provider '{provider_name}' re-initialized successfully")
+            return provider
+        except Exception as e:
+            self.provider_status[provider_name] = False
+            logger.warning(f"Provider '{provider_name}' re-initialization failed: {e}")
+            return None
     
     async def initialize(self):
         """Initialize all configured providers"""
@@ -117,9 +138,8 @@ class ProviderFactory:
         temperature: float,
     ) -> Optional[ProviderResponse]:
         """Try to get response from specific provider with retries"""
-        provider = self.providers.get(provider_name)
+        provider = await self._ensure_provider_ready(provider_name)
         if not provider:
-            logger.error(f"Provider '{provider_name}' not found")
             return None
         
         for attempt in range(self.retry_attempts):
@@ -185,18 +205,22 @@ class ProviderFactory:
         """Get embedding with fallback"""
         # If preferred provider specified, try it first
         if preferred_provider and preferred_provider.lower() in self.providers:
-            provider = self.providers.get(preferred_provider.lower())
-            try:
-                return await provider.embed(text)
-            except Exception:
-                logger.warning(f"Preferred embedding provider '{preferred_provider}' failed")
+            provider_name = preferred_provider.lower()
+            provider = await self._ensure_provider_ready(provider_name)
+            if provider:
+                try:
+                    return await provider.embed(text)
+                except Exception:
+                    logger.warning(f"Preferred embedding provider '{preferred_provider}' failed")
 
         # Try Ollama first for embeddings as it's the primary provider for this
         if "ollama" in self.providers:
-            try:
-                return await self.providers["ollama"].embed(text)
-            except Exception as e:
-                logger.warning(f"Ollama embedding failed: {e}")
+            ollama = await self._ensure_provider_ready("ollama")
+            if ollama:
+                try:
+                    return await ollama.embed(text)
+                except Exception as e:
+                    logger.warning(f"Ollama embedding failed: {e}")
 
         # If everything fails
         raise Exception("No available provider for embeddings")
