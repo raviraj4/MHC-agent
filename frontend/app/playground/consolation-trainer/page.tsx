@@ -10,7 +10,37 @@ type Message = {
     content: string
 }
 
+type Scenario = {
+    id?: string
+    title: string
+    description: string
+    initialSystem?: string
+    initial_system_prompt?: string
+    welcome?: string
+    welcome_message?: string
+    critiqueFocus?: string
+    critique_focus?: string
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"
+
+const TAG_QUERY_MAP: Record<string, string> = {
+    'Grief': 'loss of a parent grief funeral support',
+    'Work Conflict': 'coworker conflict divorce stress workplace burnout',
+    'Harassment': 'persistent pressure boundary violation unsafe behavior',
+    'Health Scare': 'worrying diagnosis fear of treatment uncertainty',
+    'Family Drama': 'family fallout sibling conflict betrayal inheritance',
+    'Social Pressure': 'social pressure guilt trip boundary setting safety'
+}
+
+const TAG_PREFERRED_TITLE_MAP: Record<string, string> = {
+    'Grief': 'Loss of a Parent',
+    'Work Conflict': 'Career Burnout',
+    'Harassment': 'Persistent Social Pressure',
+    'Health Scare': 'Unexpected Diagnosis',
+    'Family Drama': 'Family Fallout',
+    'Social Pressure': 'Persistent Social Pressure'
+}
 
 const SCENARIOS = [
     {
@@ -66,7 +96,7 @@ const SCENARIOS = [
 export default function ConsolationTrainer() {
     const router = useRouter()
     const { session } = useAuth()
-    const [selectedScenario, setSelectedScenario] = useState<typeof SCENARIOS[0] | null>(null)
+    const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null)
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -82,12 +112,12 @@ export default function ConsolationTrainer() {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, review])
 
-    const startSession = (scenario: any) => {
+    const startSession = (scenario: Scenario) => {
         setIsFinished(false)
         setReview(null)
         setSelectedScenario(scenario)
         const systemPrompt = (scenario.initialSystem || scenario.initial_system_prompt)
-        const welcome = (scenario.welcome || scenario.welcome_message)
+        const welcome = scenario.welcome || scenario.welcome_message || 'Hey, can we talk for a minute?'
         
         setMessages([
             { role: 'system', content: systemPrompt + " You are here to help the user practice empathy. Only end the session if the user explicitly asks to finish or if it naturally concludes. Use '###SESSION_COMPLETE###' only if ending." },
@@ -95,20 +125,37 @@ export default function ConsolationTrainer() {
         ])
     }
 
-    const searchCustomScenario = async () => {
-        if (!customQuery.trim() || isSearching) return
+    const searchCustomScenario = async (queryOverride?: string, preferredTitle?: string) => {
+        const query = (queryOverride ?? customQuery).trim()
+        if (!query || isSearching) return
         
         setIsSearching(true)
         try {
-            const res = await fetch(`${API_BASE}/api/scenarios/search?query=${encodeURIComponent(customQuery)}`)
-            if (res.ok) {
-                const results = await res.json()
-                if (results && results.length > 0) {
-                    // Start session with the best match found via RAG
-                    startSession(results[0])
-                } else {
-                    alert("No matching scenario found. Try describing your situation differently.")
-                }
+            const threshold = queryOverride ? 0.3 : 0.5
+            const limit = queryOverride ? 5 : 3
+
+            const searchOnce = async (searchThreshold: number) => {
+                const res = await fetch(`${API_BASE}/api/scenarios/search?query=${encodeURIComponent(query)}&threshold=${searchThreshold}&limit=${limit}`)
+                if (!res.ok) return []
+                const data = await res.json()
+                return Array.isArray(data) ? data : []
+            }
+
+            let results = await searchOnce(threshold)
+
+            // Tag searches can be sparse; retry with looser threshold before failing.
+            if (results.length === 0 && queryOverride) {
+                results = await searchOnce(0.2)
+            }
+
+            if (results.length > 0) {
+                // Prefer a semantically expected title for tag-based searches, fallback to top similarity.
+                const matched = preferredTitle
+                    ? results.find((s: Scenario) => s.title?.toLowerCase() === preferredTitle.toLowerCase())
+                    : null
+                startSession(matched || results[0])
+            } else {
+                alert("No matching scenario found. Try describing your situation differently.")
             }
         } catch (error) {
             console.error('Search error:', error)
@@ -156,12 +203,16 @@ export default function ConsolationTrainer() {
                 6. Do NOT include any intro like "Here is the review", start immediately with the feedback.
             `
 
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json'
+            }
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`
+            }
+
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                },
+                headers,
                 body: JSON.stringify({
                     messages: [{ role: 'system', content: reviewPrompt }],
                     conversation_id: 'transient_playground_review',
@@ -190,12 +241,16 @@ export default function ConsolationTrainer() {
         setIsLoading(true)
 
         try {
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json'
+            }
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`
+            }
+
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                },
+                headers,
                 body: JSON.stringify({
                     messages: newMessages,
                     conversation_id: 'transient_playground',
@@ -256,7 +311,9 @@ export default function ConsolationTrainer() {
                                     className="flex-1 bg-transparent px-4 py-3 text-sm focus:outline-none placeholder:opacity-50"
                                 />
                                 <button 
-                                    onClick={searchCustomScenario}
+                                    onClick={() => {
+                                        searchCustomScenario()
+                                    }}
                                     disabled={isSearching || !customQuery.trim()}
                                     className="px-6 py-3 bg-amber-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2 shadow-lg shadow-amber-500/20"
                                 >
@@ -277,8 +334,9 @@ export default function ConsolationTrainer() {
                                     key={tag}
                                     onClick={() => {
                                         setCustomQuery(tag)
-                                        // Slight delay to allow state update before firing search
-                                        setTimeout(searchCustomScenario, 50)
+                                        const mappedQuery = TAG_QUERY_MAP[tag] || tag
+                                        const preferredTitle = TAG_PREFERRED_TITLE_MAP[tag]
+                                        searchCustomScenario(mappedQuery, preferredTitle)
                                     }}
                                     className="px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/10 text-[10px] font-bold text-amber-600/70 hover:bg-amber-500/10 hover:text-amber-500 transition-all uppercase tracking-tighter"
                                 >

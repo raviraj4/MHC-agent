@@ -95,10 +95,13 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
             parts = authorization.split()
             token = parts[1] if len(parts) > 1 else parts[0]
             token = token.strip()
+            if not token or token.lower() in {"undefined", "null"}:
+                token = ""
+                logger.warning("Ignoring empty/placeholder bearer token")
             
             # Use the service role client if available for debugging, or normal client
             # For now, let's stick to the principal of using the user's token
-            auth_response = supabase.auth.get_user(token)
+            auth_response = supabase.auth.get_user(token) if token else None
             
             if auth_response and hasattr(auth_response, 'user') and auth_response.user:
                 user_id = auth_response.user.id
@@ -109,7 +112,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
             else:
                 logger.warning("Auth response successful but no user found. Potential session expiry.")
         except Exception as e:
-            logger.error(f"SUPABASE AUTH ERROR: {e}")
+            logger.warning(f"SUPABASE AUTH WARNING: {e}")
 
     conv_id = payload.conversation_id
     
