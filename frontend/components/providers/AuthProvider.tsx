@@ -23,26 +23,24 @@ export function AuthProvider({
 }) {
   const [session, setSession] = useState<Session | null>(initialSession)
   const [user, setUser] = useState<User|null>(initialSession?.user ?? null)
-  const [isLoading, setIsLoading] = useState(!initialSession)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   
   // Memoize supabase client to prevent infinite re-renders
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    // Only fetch user if no initial session was provided (edge case)
-    if (!initialSession) {
-      supabase.auth.getUser().then(({ data: { user }, error }) => {
-        if (error || !user) {
-          setSession(null)
-          setUser(null)
-        } else {
-          setUser(user)
-          setSession({ user } as Session)
-        }
-        setIsLoading(false)
-      })
-    }
+    // Always hydrate from browser session to get a trusted, full client session/token.
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error || !session) {
+        setSession(null)
+        setUser(null)
+      } else {
+        setSession(session)
+        setUser(session.user)
+      }
+      setIsLoading(false)
+    })
 
     // Listen for auth changes — only refresh on meaningful events
     const {

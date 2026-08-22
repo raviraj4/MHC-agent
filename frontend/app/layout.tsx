@@ -21,8 +21,8 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Convert user to minimal session object for AuthProvider
-  const session = user ? { user } as any : null
+  // Server-side auth should rely on getUser(); client provider hydrates full session/token.
+  const session = user ? ({ user } as any) : null
 
   return (
     <html lang="en" suppressHydrationWarning className={manrope.variable}>

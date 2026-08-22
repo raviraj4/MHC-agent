@@ -238,15 +238,24 @@ class OllamaProvider(LLMProvider):
             raise ProviderInvalidResponseException(f"Ollama embedding failed: {e}")
 
     def _build_messages_with_profile(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Add system prompt to messages"""
+        """Normalize messages and ensure a system prompt is present."""
         profile = MODEL_PROFILES.get(self.model, {})
         system_prompt = profile.get("system_prompt")
-        
-        converted = list(messages)
-        if system_prompt:
-            if not converted or converted[0].get("role") != "system":
-                converted = [{"role": "system", "content": system_prompt}, *converted]
-        
+
+        converted: List[Dict[str, str]] = []
+        for m in messages:
+            if isinstance(m, dict):
+                role = m.get("role", "user")
+                content = m.get("content", "")
+            else:
+                # Support Pydantic models/objects passed from FastAPI request models.
+                role = getattr(m, "role", "user")
+                content = getattr(m, "content", "")
+            converted.append({"role": str(role), "content": str(content)})
+
+        if system_prompt and (not converted or converted[0].get("role") != "system"):
+            converted = [{"role": "system", "content": system_prompt}, *converted]
+
         return converted
     
     async def health_check(self) -> bool:
