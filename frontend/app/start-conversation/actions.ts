@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createAdminClient, createClient } from '@/utils/supabase/server'
 
 export interface EmergencyContactPayload {
   name: string
@@ -28,6 +28,16 @@ export async function completeOnboarding(payload: OnboardingPayload) {
     return { error: 'You need to be signed in to continue.' }
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profile?.role && profile.role !== 'user') {
+    return { error: 'Onboarding is only available to user accounts.' }
+  }
+
   const trimmedName = payload.name?.trim()
   if (!trimmedName) {
     return { error: 'Please share what you would like us to call you.' }
@@ -47,25 +57,36 @@ export async function completeOnboarding(payload: OnboardingPayload) {
   const goals = Array.from(new Set(payload.goals || []))
   const activities = Array.from(new Set(payload.activities || []))
 
-  // Update profile with preferences
-  const { error: profileError } = await supabase.from('profiles').upsert(
-    {
-      id: user.id,
-      email: user.email,
-      full_name: trimmedName,
-      user_name: trimmedName,
-      preferences: {
-        goals,
-        activities,
-      },
-      onboarding_completed: true,
-      updated_at: new Date().toISOString(),
+  const profilePayload = {
+    id: user.id,
+    email: user.email,
+    full_name: trimmedName,
+    user_name: trimmedName,
+    preferences: {
+      goals,
+      activities,
     },
-    { onConflict: 'id' },
-  )
+    onboarding_completed: true,
+    updated_at: new Date().toISOString(),
+  }
 
-  if (profileError) {
-    return { error: profileError.message }
+  // Update profile with preferences
+  const profileResult = await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+
+  if (profileResult.error) {
+    try {
+      const adminSupabase = createAdminClient()
+      const { error: adminProfileError } = await adminSupabase
+        .from('profiles')
+        .upsert(profilePayload, { onConflict: 'id' })
+
+      if (adminProfileError) {
+        return { error: adminProfileError.message }
+      }
+    } catch (adminError) {
+      console.error('[Onboarding Profile Admin Error]', adminError)
+      return { error: 'We could not save your profile because the server configuration is incomplete.' }
+    }
   }
 
   // Upsert emergency contact into dedicated table

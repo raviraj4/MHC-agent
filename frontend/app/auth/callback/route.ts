@@ -26,10 +26,20 @@ export async function GET(request: Request) {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('id, role, onboarding_completed')
           .eq('id', user.id)
           .maybeSingle()
 
+        // Role-based routing
+        if (profile?.role === 'admin') {
+          return NextResponse.redirect(`${origin}/admin`)
+        }
+
+        if (profile?.role === 'therapist') {
+          return NextResponse.redirect(`${origin}/therapist-dashboard`)
+        }
+
+        // Default user flow
         if (profile?.onboarding_completed === true) {
           return NextResponse.redirect(`${origin}/dashboard`)
         }

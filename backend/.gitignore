@@ -1,4 +1,4 @@
 .env
-myenv/
+venv/
 *.db
 app/__pycache__/

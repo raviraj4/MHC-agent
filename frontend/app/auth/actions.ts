@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createAdminClient, createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
 const SIGNUP_COOLDOWN_MS = 60_000
@@ -9,7 +9,7 @@ const signupAttemptByEmail = new Map<string, number>()
 export async function login(_prevState: { error: boolean; message: string },
   formData: FormData) {
 
-const supabase = await createClient()
+  const supabase = await createClient()
 
   const data = {
     email: formData.get('email') as string,
@@ -18,11 +18,11 @@ const supabase = await createClient()
 
   // Validation
   if (!data.email || !data.password) {
-    return { error: 'Email and password are required' }
+    return { error: true, message: 'Email and password are required' }
   }
 
   if (!data.email.includes('@')) {
-    return { error: 'Please enter a valid email address' }
+    return { error: true, message: 'Please enter a valid email address' }
   }
 
   const { data: authData, error } = await supabase.auth.signInWithPassword(data)
@@ -40,22 +40,28 @@ const supabase = await createClient()
   if (authData.user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('onboarding_completed')
+      .select('role, onboarding_completed')
       .eq('id', authData.user.id)
       .maybeSingle()
+
+    if (profile?.role === 'admin') {
+      redirect('/admin')
+    }
+
+    if (profile?.role === 'therapist') {
+      redirect('/therapist-dashboard')
+    }
 
     // Redirect to onboarding if profile doesn't exist or onboarding not completed
     if (profile?.onboarding_completed === true) {
       redirect('/dashboard')
-    } else {
+    }else {
       redirect('/start-conversation')
     }
   }
 
   redirect('/dashboard')
-  return { error: false, message: 'successfully signed in user! ' }
-
-  
+  // return { error: false, message: 'successfully signed in user! ' }
 
 }
 
@@ -123,6 +129,129 @@ export async function signup(formData: FormData) {
   return { 
     success: true,
     message: 'Registration successful! Please check your email for verification link.'
+  }
+}
+
+export async function signupTherapist(formData: FormData) {
+  const supabase = await createClient()
+
+  const email = (formData.get('email') as string | null)?.trim().toLowerCase()
+  const password = formData.get('password') as string | null
+  const fullName = (formData.get('fullName') as string | null)?.trim()
+  const licenseNumber = (formData.get('licenseNumber') as string | null)?.trim()
+  const practiceName = (formData.get('practiceName') as string | null)?.trim()
+  const specializations = (formData.get('specializations') as string | null)?.trim()
+  const bio = (formData.get('bio') as string | null)?.trim()
+
+  if (!email || !password || !fullName || !licenseNumber) {
+    return { error: 'Please complete the required therapist profile fields.' }
+  }
+
+  if (!email.includes('@')) {
+    return { error: 'Please enter a valid email address.' }
+  }
+
+  if (password.length < 8) {
+    return { error: 'Password must be at least 8 characters long.' }
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+  const normalizedSpecializations = specializations
+    ? specializations
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : []
+
+  const { data: signUpData, error } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+    },
+  })
+
+  if (error) {
+    console.error('[Therapist Signup Error]', error.message, error.status, error.code)
+    return { error: error.message || 'Therapist registration failed.' }
+  }
+
+  if (signUpData.user && !signUpData.user.identities?.length) {
+    return { error: 'An account with this email already exists.' }
+  }
+
+  const profilePayload = {
+    id: signUpData.user?.id,
+    email: normalizedEmail,
+    full_name: fullName,
+    user_name: fullName,
+    role: 'therapist',
+    onboarding_completed: false,
+    preferences: {
+      account_type: 'therapist',
+      verification_status: 'pending_review',
+      license_number: licenseNumber,
+      practice_name: practiceName || null,
+      specializations: normalizedSpecializations,
+      bio: bio || null,
+    },
+    updated_at: new Date().toISOString(),
+  }
+
+  const profileResult = await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+
+  if (profileResult.error) {
+    try {
+      const adminSupabase = await createAdminClient()
+      const { error: adminProfileError } = await adminSupabase
+        .from('profiles')
+        .upsert(profilePayload, { onConflict: 'id' })
+
+      if (adminProfileError) {
+        console.error('[Therapist Profile Error]', adminProfileError.message)
+        return { error: adminProfileError.message || 'We could not save your therapist profile.' }
+      }
+    } catch (adminError) {
+      console.error('[Therapist Profile Admin Error]', adminError)
+      return { error: 'We could not save your therapist profile because the server configuration is incomplete.' }
+    }
+  }
+
+  if (!signUpData.user?.id) {
+    return { error: 'We could not create your therapist account. Please try again.' }
+  }
+
+  const therapistProfilePayload = {
+    therapist_id: signUpData.user.id,
+    profile_id: signUpData.user.id,
+    license_number: licenseNumber,
+    practice_name: practiceName || null,
+    specializations: normalizedSpecializations,
+    bio: bio || null,
+    verification_status: 'pending_review',
+    updated_at: new Date().toISOString(),
+  }
+
+  // This is the record consumed by the admin review queue. Use the service-role
+  // client because a newly registered user may not yet have an authenticated session.
+  try {
+    const adminSupabase = await createAdminClient()
+    const { error: therapistProfileError } = await adminSupabase
+      .from('therapist_profiles')
+      .upsert(therapistProfilePayload, { onConflict: 'therapist_id' })
+
+    if (therapistProfileError) {
+      console.error('[Therapist Application Error]', therapistProfileError.message)
+      return { error: 'Your account was created, but we could not submit the application. Please contact support.' }
+    }
+  } catch (adminError) {
+    console.error('[Therapist Application Admin Error]', adminError)
+    return { error: 'Your account was created, but the application service is unavailable. Please contact support.' }
+  }
+
+  return {
+    success: true,
+    message: 'Therapist application received. We will review your credentials before activating your account.',
   }
 }
 

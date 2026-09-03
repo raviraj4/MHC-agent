@@ -240,15 +240,20 @@ export default function SignupPage() {
           )}
         </button>
 
-        <p className="pt-2 text-center text-sm text-[var(--muted-foreground)]">
-          Already have an account?{' '}
-          <a 
-            href="/auth/login" 
-            className="font-medium text-[var(--primary)] hover:opacity-80"
-          >
-            Sign in
-          </a>
-        </p>
+        <div className="space-y-2 pt-2 text-center text-sm text-[var(--muted-foreground)]">
+          <p>
+            Already have an account?{' '}
+            <a href="/auth/login" className="font-medium text-[var(--primary)] hover:opacity-80">
+              Sign in
+            </a>
+          </p>
+          <p>
+            Are you a licensed therapist?{' '}
+            <a href="/auth/signup/therapist" className="font-medium text-[var(--primary)] hover:opacity-80">
+              Apply here instead
+            </a>
+          </p>
+        </div>
       </form>
     </div>
   )

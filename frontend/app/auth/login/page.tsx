@@ -1,23 +1,68 @@
 'use client'
-import { useActionState, useState } from 'react'
-import { login } from '../actions'
-
-
-const initialState = { error: false, message: '' }
+import { FormEvent, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
 
 export default function LoginPage() {
-  const [state, formAction] = useActionState(login, initialState)
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
 
   const togglePasswordVisibility = () => {
     setShowPassword(true)
     setTimeout(() => setShowPassword(false), 1000)
   }
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setMessage('')
+    setIsSubmitting(true)
+
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') || '').trim()
+    const password = String(formData.get('password') || '')
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error || !data.user) {
+        setMessage(error?.message || 'Unable to sign in. Check your email and password.')
+        return
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, onboarding_completed')
+        .eq('id', data.user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        setMessage('Signed in, but we could not load your account details. Please try again.')
+        return
+      }
+
+      const destination = profile?.role === 'admin'
+        ? '/admin'
+        : profile?.role === 'therapist'
+          ? '/therapist-dashboard'
+          : profile?.onboarding_completed
+            ? '/dashboard'
+            : '/start-conversation'
+
+      router.replace(destination)
+      router.refresh()
+    } catch {
+      setMessage('Something went wrong while signing in. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] px-4 py-12">
       <div className="relative mx-auto w-full max-w-md">
-        <form className="space-y-5 rounded-2xl bg-[var(--card)] p-6">
+        <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl bg-[var(--card)] p-6">
           <div className="text-center">
             <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--primary)]">
               Welcome back
@@ -40,6 +85,8 @@ export default function LoginPage() {
               name="email"
               type="email"
               required
+              autoComplete="email"
+              disabled={isSubmitting}
               className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
             />
           </div>
@@ -52,11 +99,14 @@ export default function LoginPage() {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
+                disabled={isSubmitting}
                 className="w-full rounded-xl bg-[var(--muted)] px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/50"
               />
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
+                disabled={isSubmitting}
                 className="absolute inset-y-0 right-3 flex items-center text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
               >
                 {showPassword ? (
@@ -79,14 +129,14 @@ export default function LoginPage() {
           </div>
 
           <button
-            formAction={formAction}
+            type="submit"
+            disabled={isSubmitting}
             className="w-full rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] transition hover:opacity-90"
           >
-            Sign in
+            {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
 
-          {state.error && <p className="text-sm text-red-500">{state.message}</p>}
-          {!state.error && state.message && <p className="text-sm text-emerald-500">{state.message}</p>}
+          {message && <p className="text-sm text-red-500">{message}</p>}
 
           <div className="space-y-1.5 text-center text-sm text-[var(--muted-foreground)]">
             <p>Don&apos;t have an account?</p>
@@ -97,8 +147,8 @@ export default function LoginPage() {
 
           <div className="space-y-1.5 text-center text-sm text-[var(--muted-foreground)]">
             <p>Registered mental health pro?</p>
-            <a href="#" className="font-medium text-[var(--primary)] hover:opacity-80">
-              Sign up as a Pro
+            <a href="/auth/signup/therapist" className="font-medium text-[var(--primary)] hover:opacity-80">
+              Sign up as a therapist
             </a>
           </div>
         </form>
