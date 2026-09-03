@@ -514,7 +514,7 @@ export default function AsaChatInterface({ userId: _userId, onMessageSent, canSe
                         className="h-9 w-9 rounded-xl object-cover"
                       />
                     ) : (
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-400 text-[10px] font-semibold tracking-wider text-white">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-sky-500 to-cyan-900 text-[10px] font-semibold tracking-wider text-white">
                         ASA
                       </div>
                     )}

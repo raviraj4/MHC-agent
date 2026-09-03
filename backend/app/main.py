@@ -689,6 +689,34 @@ def get_connection_for_participant(db: Client, conversation_id: str, participant
     return conversation.data[0], connection.data[0]
 
 
+def get_direct_participant_profiles(db: Client, participant_ids: list[str]):
+    profiles = db.table("profiles").select("id, email, full_name, user_name, role").in_("id", participant_ids).execute().data or []
+    return {
+        profile["id"]: {
+            "id": profile["id"],
+            "email": profile.get("email"),
+            "full_name": profile.get("full_name"),
+            "user_name": profile.get("user_name"),
+            "role": profile.get("role") or "user",
+        }
+        for profile in profiles
+    }
+
+
+def attach_sender_to_direct_message(message: dict, participant_profiles: dict):
+    sender = participant_profiles.get(message.get("sender_id"))
+    return {
+        **message,
+        "sender": sender or {
+            "id": message.get("sender_id"),
+            "email": None,
+            "full_name": None,
+            "user_name": None,
+            "role": "user",
+        },
+    }
+
+
 @app.get("/therapists")
 async def search_therapists(
     search: Optional[str] = None,
@@ -803,7 +831,9 @@ async def connect_to_therapist(payload: TherapistConnectionRequest, authorizatio
 async def get_direct_messages(conversation_id: str, authorization: Optional[str] = Header(None)):
     user_id = await validate_user_token(authorization)
     db = get_admin_supabase()
-    get_connection_for_participant(db, conversation_id, user_id)
+    _, connection = get_connection_for_participant(db, conversation_id, user_id)
+    participant_ids = [connection["user_id"], connection["therapist_id"]]
+    participant_profiles = get_direct_participant_profiles(db, participant_ids)
     messages = db.table("direct_messages").select("id, sender_id, body, read_at, created_at").eq(
         "conversation_id", conversation_id
     ).order("created_at").execute().data or []
@@ -813,7 +843,10 @@ async def get_direct_messages(conversation_id: str, authorization: Optional[str]
     db.table("notifications").update({"read_at": datetime.now(timezone.utc).isoformat()}).eq(
         "recipient_id", user_id
     ).eq("conversation_id", conversation_id).is_("read_at", "null").execute()
-    return {"data": messages}
+    return {
+        "participants": participant_profiles,
+        "data": [attach_sender_to_direct_message(message, participant_profiles) for message in messages],
+    }
 
 
 @app.post("/direct-conversations/{conversation_id}/messages")
@@ -824,6 +857,7 @@ async def send_direct_message(conversation_id: str, payload: DirectMessageReques
         raise HTTPException(status_code=422, detail="Message cannot be empty")
     db = get_admin_supabase()
     _, connection = get_connection_for_participant(db, conversation_id, user_id)
+    participant_profiles = get_direct_participant_profiles(db, [connection["user_id"], connection["therapist_id"]])
     message = db.table("direct_messages").insert({
         "conversation_id": conversation_id, "sender_id": user_id, "body": body,
     }).execute().data[0]
@@ -834,7 +868,7 @@ async def send_direct_message(conversation_id: str, payload: DirectMessageReques
         "recipient_id": recipient_id, "actor_id": user_id, "kind": "new_direct_message",
         "title": "You received a new message", "body": body[:160], "conversation_id": conversation_id, "message_id": message["id"],
     }).execute()
-    return message
+    return attach_sender_to_direct_message(message, participant_profiles)
 
 
 @app.get("/notifications")

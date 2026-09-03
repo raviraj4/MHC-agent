@@ -1,11 +1,53 @@
 'use client'
 
 import { useAuth } from '@/components/providers/AuthProvider'
+import { ShieldCheck, Stethoscope, UserRound, type LucideIcon } from 'lucide-react'
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
 
-type DirectMessage = { id: string; sender_id: string; body: string; created_at: string }
+type ParticipantRole = 'admin' | 'therapist' | 'user'
+
+type DirectMessageSender = {
+  id: string
+  email?: string | null
+  full_name?: string | null
+  user_name?: string | null
+  role?: ParticipantRole | string | null
+}
+
+type DirectMessage = {
+  id: string
+  sender_id: string
+  body: string
+  created_at: string
+  sender?: DirectMessageSender | null
+}
+
+const roleIcons: Record<ParticipantRole, LucideIcon> = {
+  admin: ShieldCheck,
+  therapist: Stethoscope,
+  user: UserRound,
+}
+
+function getSenderDisplayName(sender: DirectMessageSender | null | undefined) {
+  return sender?.full_name || sender?.user_name || sender?.email || 'Unknown user'
+}
+
+function getSenderRole(sender: DirectMessageSender | null | undefined): ParticipantRole {
+  return sender?.role === 'admin' || sender?.role === 'therapist' ? sender.role : 'user'
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return 'U'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
+
+function formatRole(role: ParticipantRole) {
+  return role.charAt(0).toUpperCase() + role.slice(1)
+}
 
 export function DirectMessageClient({ conversationId }: { conversationId: string }) {
   const { session, user } = useAuth()
@@ -82,14 +124,35 @@ export function DirectMessageClient({ conversationId }: { conversationId: string
         {error ? <p className="mx-auto max-w-3xl rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-600">{error}</p> : null}
         <div className="mx-auto max-w-3xl space-y-3">
           {messages.map((message) => {
-            const mine = message.sender_id === user?.id
-            return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${mine ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'bg-[var(--card)] ring-1 ring-[var(--border)]'}`}>
+            const isMine = message.sender_id === user?.id
+            const senderName = getSenderDisplayName(message.sender)
+            const senderRole = getSenderRole(message.sender)
+            const RoleIcon = roleIcons[senderRole]
+
+            return <div key={message.id} className={`flex items-end gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
+              {!isMine ? (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--muted)] text-xs font-semibold text-[var(--foreground)] ring-1 ring-[var(--border)]" title={`${senderName} (${formatRole(senderRole)})`}>
+                  {getInitials(senderName)}
+                </div>
+              ) : null}
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${isMine ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'bg-[var(--card)] ring-1 ring-[var(--border)]'}`}>
+                <div className={`mb-1 flex items-center gap-1.5 text-[11px] font-medium ${isMine ? 'text-[var(--primary-foreground)]/80' : 'text-[var(--muted-foreground)]'}`}>
+                  <RoleIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{senderName}</span>
+                  <span className={isMine ? 'opacity-70' : 'text-[var(--muted-foreground)]'}>({formatRole(senderRole)})</span>
+                </div>
                 <p>{message.body}</p>
-                <p className={`mt-1 text-[10px] ${mine ? 'opacity-70' : 'text-[var(--muted-foreground)]'}`}>{new Date(message.created_at).toLocaleString()}</p>
+                <p className={`mt-1 text-[10px] ${isMine ? 'opacity-70' : 'text-[var(--muted-foreground)]'}`}>{new Date(message.created_at).toLocaleString()}</p>
               </div>
+              {isMine ? (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-semibold text-[var(--primary-foreground)] ring-1 ring-[var(--primary)]/30" title={`${senderName} (${formatRole(senderRole)})`}>
+                  {getInitials(senderName)}
+                </div>
+              ) : null}
             </div>
-          })}
+          }
+        )
+      }
         </div>
       </div>
       <form onSubmit={sendMessage} className="border-t border-[var(--border)] bg-[var(--card)] p-4">
