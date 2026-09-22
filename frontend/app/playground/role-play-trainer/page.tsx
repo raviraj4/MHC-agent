@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Send, Users, RefreshCw, MessageCircle, Info, XCircle } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
+import FormattedText from '@/components/ui/FormattedText'
 
 type Message = {
     role: 'user' | 'assistant' | 'system'
@@ -444,7 +445,7 @@ export default function RolePlayTrainer() {
                                 ? 'bg-amber-600 text-white font-medium rounded-tr-none' 
                                 : 'bg-[var(--card)] border border-[var(--border)] rounded-tl-none'}
                         `}>
-                            {m.content}
+                            <FormattedText text={m.content} />
                         </div>
                     </div>
                 ))}
@@ -462,7 +463,7 @@ export default function RolePlayTrainer() {
                                 <h3 className="font-bold text-lg tracking-tight">Coach Feedback</h3>
                             </div>
                             <div className="text-sm leading-relaxed text-[var(--foreground)] italic border-l-2 border-amber-500/30 pl-4 py-1">
-                                "{review}"
+                                <FormattedText text={review} />
                             </div>
                             <div className="pt-2 flex justify-end">
                                 <button 

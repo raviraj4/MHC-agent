@@ -13,6 +13,7 @@ class InitNet():
     """ 
     def __init__(self, user: user):
         self.user = user
+
     
 
     

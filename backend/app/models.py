@@ -86,7 +86,6 @@ class ChatMessage(BaseModel):
     conversation_id: Optional[str] = None
     timestamp: Optional[datetime] = None
     
-    
 class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     messages: List[ChatMessage]

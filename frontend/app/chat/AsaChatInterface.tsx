@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import FormattedText from "@/components/ui/FormattedText";
 
 type Role = "user" | "assistant";
 type Status = "sending" | "sent" | "error";
@@ -527,9 +528,7 @@ export default function AsaChatInterface({ userId: _userId, onMessageSent, canSe
                       : "bg-(--card) border border-(--muted-foreground)/30 text-(--foreground) shadow-sm"}
                   `}
                 >
-                  <div className="whitespace-pre-wrap wrap-break-word">
-                    {m.content}
-                  </div>
+                  <FormattedText text={m.content} className="wrap-break-word" />
                   <div
                     className={`mt-1.5 text-[10px] ${m.role === "user" ? "text-white/70" : "text-(--muted-foreground)"}`}
                   >

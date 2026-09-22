@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: MHC monitoring
+    orgId: 1
+    folder: MHC
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

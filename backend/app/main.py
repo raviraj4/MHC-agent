@@ -1,11 +1,12 @@
 import os
 import logging
+import re
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, create_engine, Session, select
 from supabase import create_client, Client
@@ -16,6 +17,7 @@ from .models import (
     AdminApprovalResponse, TherapistConnectionRequest, DirectMessageRequest
 )
 from .provider_factory import ProviderFactory
+from .monitoring.prometheus import metrics_payload
 
 import prometheus_client
 import uvicorn
@@ -28,6 +30,13 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics_endpoint() -> Response:
+    """Expose backend and Ollama metrics for Prometheus scraping."""
+    payload, content_type = metrics_payload()
+    return Response(content=payload, media_type=content_type)
+
 # Supabase setup
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
@@ -38,6 +47,13 @@ admin_supabase: Optional[Client] = (
     create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     if SUPABASE_SERVICE_ROLE_KEY else None
 )
+
+
+def get_user_supabase(access_token: str) -> Client:
+    """Create a Supabase client whose database requests carry the user's JWT."""
+    user_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    user_client.postgrest.auth(access_token)
+    return user_client
 
 
 def get_admin_supabase() -> Client:
@@ -111,6 +127,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
     
     # Authenticate user if token provided
     user_id = None
+    user_supabase = supabase
     if authorization:
         # Use strip() and split() to safely extract the token
         try:
@@ -127,9 +144,11 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
             
             if auth_response and hasattr(auth_response, 'user') and auth_response.user:
                 user_id = auth_response.user.id
+                user_supabase = get_user_supabase(token)
                 logger.info(f"Successfully authenticated user_id: {user_id}")
             elif isinstance(auth_response, dict) and "user" in auth_response:
                 user_id = auth_response["user"]["id"]
+                user_supabase = get_user_supabase(token)
                 logger.info(f"Successfully authenticated user_id (dict): {user_id}")
             else:
                 logger.warning("Auth response successful but no user found. Potential session expiry.")
@@ -154,7 +173,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
             # but since we're using a single 'supabase' client instance, we need to ensure
             # we're acting on behalf of the user.
             
-            conv = supabase.table("conversations").insert({
+            conv = user_supabase.table("conversations").insert({
                 "user_id": user_id,
                 "title": "New Conversation"
             }).execute()
@@ -185,7 +204,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
                 content = last_user_msg.get("content") if isinstance(last_user_msg, dict) else getattr(last_user_msg, 'content', '')
                 if content:
                     logger.info(f"Attempting to save user message to Supabase. Conv: {conv_id}")
-                    supabase.table("messages").insert({
+                    user_supabase.table("messages").insert({
                         "conversation_id": conv_id,
                         "user_id": user_id,
                         "role": "user",
@@ -208,7 +227,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
             try:
                 # A. Save assistant message
                 logger.info(f"Saving assistant message to conv {conv_id}")
-                supabase.table("messages").insert({
+                user_supabase.table("messages").insert({
                     "conversation_id": conv_id,
                     "user_id": user_id,
                     "role": "assistant",
@@ -225,12 +244,12 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
                         title_res, _ = await provider_factory.chat(messages=title_prompt, temperature=0.3)
                         new_title = title_res.content.strip().strip('"').strip("'")
                         logger.info(f"Updating conversation title to: {new_title}")
-                        supabase.table("conversations").update({"title": new_title}).eq("id", conv_id).execute()
+                        user_supabase.table("conversations").update({"title": new_title}).eq("id", conv_id).execute()
                     except Exception as title_err:
                         logger.warning(f"Failed to generate custom title: {title_err}")
 
                 # C. Update conversation timestamp
-                supabase.table("conversations").update({"updated_at": "now()"}).eq("id", conv_id).execute()
+                user_supabase.table("conversations").update({"updated_at": "now()"}).eq("id", conv_id).execute()
             except Exception as e:
                 logger.error(f"Failed to save to database: {e}")
 
@@ -243,7 +262,11 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
         return ChatResponse(
             message=assistant_msg,
             conversation_id=conv_id,
-            message_id=getattr(response, 'metadata', None),
+            message_id=(
+                response.metadata.get("id")
+                if isinstance(response.metadata, dict)
+                else response.metadata
+            ),
             model={
                 "name": response.model_name,
                 "provider": response.provider_name,
@@ -258,7 +281,7 @@ async def chat_endpoint(payload: ChatRequest, authorization: Optional[str] = Hea
 
 
 @app.get("/api/scenarios/search")
-async def search_scenarios(query: str, threshold: float = 0.5, limit: int = 3):
+async def search_scenarios(query: str, threshold: float = 0.35, limit: int = 5):
     """Search for relevant scenarios using vector similarity (RAG)"""
     if not provider_factory:
         raise HTTPException(status_code=500, detail="Provider not initialized")
@@ -266,16 +289,47 @@ async def search_scenarios(query: str, threshold: float = 0.5, limit: int = 3):
     try:
         # 1. Generate embedding for query
         query_vector = await provider_factory.embed(query)
+        scenario_db = admin_supabase or supabase
         
-        # 2. Call Supabase RPC
-        # match_scenarios(query_embedding, match_threshold, match_count)
-        result = supabase.rpc("match_scenarios", {
-            "query_embedding": query_vector,
-            "match_threshold": threshold,
-            "match_count": limit
-        }).execute()
-        
-        return result.data
+        # Try progressively lower thresholds because local embedding models can
+        # produce lower cosine scores than the model used when data was seeded.
+        candidates = []
+        for search_threshold in dict.fromkeys((threshold, 0.25, 0.15, 0.05)):
+            result = scenario_db.rpc("match_scenarios", {
+                "query_embedding": query_vector,
+                "match_threshold": search_threshold,
+                "match_count": limit
+            }).execute()
+            candidates = result.data or []
+            if candidates:
+                break
+
+        if candidates:
+            return candidates
+
+        # Keep search useful when stored and query embeddings came from
+        # different local models. The fallback is bounded to the scenario
+        # catalog and ranks title/description/tag word overlap.
+        scenarios = scenario_db.table("scenarios").select(
+            "id,title,description,initial_system_prompt,welcome_message,critique_focus,tags"
+        ).limit(200).execute().data or []
+        query_words = set(re.findall(r"[a-z0-9]+", query.lower()))
+        ranked = []
+        for scenario in scenarios:
+            searchable = " ".join(str(scenario.get(field) or "") for field in (
+                "title", "description", "tags", "critique_focus"
+            )).lower()
+            scenario_words = set(re.findall(r"[a-z0-9]+", searchable))
+            overlap = query_words & scenario_words
+            if overlap:
+                score = len(overlap) / max(len(query_words), 1)
+                ranked.append((score, scenario))
+
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [
+            {**scenario, "similarity": round(score, 4)}
+            for score, scenario in ranked[:limit]
+        ]
     except Exception as e:
         logger.error(f"Search error: {e}")
         raise HTTPException(status_code=500, detail=f"Search failed: {e}")
@@ -285,8 +339,8 @@ async def retrieve_and_ground_scenario(
     user_message: str,
     query_hint: Optional[str] = None,
     scenario_id_hint: Optional[str] = None,
-    threshold: float = 0.5,
-    fallback_threshold: float = 0.3
+    threshold: float = 0.35,
+    fallback_threshold: float = 0.15
 ) -> ScenarioContext:
     """
     Retrieve best-matching scenario for grounding trainer conversation.
@@ -306,9 +360,10 @@ async def retrieve_and_ground_scenario(
         raise ValueError("Provider not initialized")
     
     try:
+        scenario_db = admin_supabase or supabase
         # 0. Scenario lock: if scenario id is provided, pin to that scenario for the session.
         if scenario_id_hint:
-            locked = supabase.table("scenarios").select(
+            locked = scenario_db.table("scenarios").select(
                 "id,title,description,initial_system_prompt,critique_focus"
             ).eq("id", scenario_id_hint).limit(1).execute()
             if locked.data:
@@ -325,7 +380,7 @@ async def retrieve_and_ground_scenario(
 
         # 0b. Fallback lock by title when id is unavailable (e.g. locally seeded scenario cards).
         if query_hint:
-            title_locked = supabase.table("scenarios").select(
+            title_locked = scenario_db.table("scenarios").select(
                 "id,title,description,initial_system_prompt,critique_focus"
             ).ilike("title", query_hint).limit(1).execute()
             if title_locked.data:
@@ -349,7 +404,7 @@ async def retrieve_and_ground_scenario(
         query_vector = await provider_factory.embed(retrieval_query)
         
         # 2. Attempt retrieval at primary threshold
-        result = supabase.rpc("match_scenarios", {
+        result = scenario_db.rpc("match_scenarios", {
             "query_embedding": query_vector,
             "match_threshold": threshold,
             "match_count": 5
@@ -360,7 +415,7 @@ async def retrieve_and_ground_scenario(
         # 3. Fallback: if no results, retry with lower threshold
         if not candidates:
             logger.warning(f"No scenarios at threshold {threshold}, retrying at {fallback_threshold}")
-            result = supabase.rpc("match_scenarios", {
+            result = scenario_db.rpc("match_scenarios", {
                 "query_embedding": query_vector,
                 "match_threshold": fallback_threshold,
                 "match_count": 5
@@ -371,7 +426,7 @@ async def retrieve_and_ground_scenario(
         if not candidates:
             final_threshold = 0.1
             logger.warning(f"No scenarios at threshold {fallback_threshold}, retrying at {final_threshold}")
-            result = supabase.rpc("match_scenarios", {
+            result = scenario_db.rpc("match_scenarios", {
                 "query_embedding": query_vector,
                 "match_threshold": final_threshold,
                 "match_count": 5
@@ -465,8 +520,8 @@ async def trainer_rag_chat_endpoint(payload: TrainerRagChatRequest, authorizatio
             user_message=payload.user_message,
             query_hint=payload.query_hint,
             scenario_id_hint=payload.scenario_id,
-            threshold=0.5,
-            fallback_threshold=0.3
+            threshold=0.35,
+            fallback_threshold=0.15
         )
         logger.info(f"Trainer RAG: Selected scenario '{scenario_context.scenario_title}' (score: {scenario_context.retrieval_score:.3f})")
         
@@ -514,9 +569,10 @@ async def get_conversations(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid token")
     
     user_id = user.user.id
+    user_supabase = get_user_supabase(token)
     
     # We use Supabase directly instead of local SQLModel for production scale
-    response = supabase.table("conversations").select("*").eq("user_id", user_id).order("updated_at", desc=True).execute()
+    response = user_supabase.table("conversations").select("*").eq("user_id", user_id).order("updated_at", desc=True).execute()
     return response.data
 
 
@@ -536,11 +592,12 @@ async def get_messages(conversation_id: str, authorization: Optional[str] = Head
             raise HTTPException(status_code=401, detail="Invalid token")
         
         user_id = user.user.id
+        user_supabase = get_user_supabase(token)
         
         # Verify ownership of conversation - Use maybe_single() to handle 406/no-match
         # Avoid .single() as it throws an error if 0 or >1 matches
         try:
-            request = supabase.table("conversations").select("user_id").eq("id", conversation_id).execute()
+            request = user_supabase.table("conversations").select("user_id").eq("id", conversation_id).execute()
             if not request.data:
                 return []
                 
@@ -552,7 +609,7 @@ async def get_messages(conversation_id: str, authorization: Optional[str] = Head
             logger.error(f"PostgREST error in get_messages: {table_err}")
             return []
             
-        response = supabase.table("messages").select("*").eq("conversation_id", conversation_id).order("created_at", desc=False).execute()
+        response = user_supabase.table("messages").select("*").eq("conversation_id", conversation_id).order("created_at", desc=False).execute()
         return response.data
     except Exception as e:
         logger.error(f"Error fetching messages: {e}")
@@ -573,9 +630,10 @@ async def create_conversation(payload: dict, authorization: Optional[str] = Head
         raise HTTPException(status_code=401, detail="Invalid token")
     
     user_id = user.user.id
+    user_supabase = get_user_supabase(token)
     title = payload.get("title", "New Conversation")
     
-    response = supabase.table("conversations").insert({
+    response = user_supabase.table("conversations").insert({
         "user_id": user_id,
         "title": title
     }).execute()
@@ -1187,8 +1245,7 @@ async def reject_therapist_application(
         logger.error(f"Error rejecting therapist: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to reject therapist: {e}")
 
-
-
+@app.get("/health")
 async def health():
     """Health check endpoint"""
     if not provider_factory:
