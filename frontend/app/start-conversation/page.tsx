@@ -29,9 +29,17 @@ export default async function StartConversationPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, user_name, preferences, onboarding_completed')
+    .select('full_name, user_name, preferences, onboarding_completed, role')
     .eq('id', user.id)
     .maybeSingle()
+
+  if (profile?.role === 'admin') {
+    redirect('/admin')
+  }
+
+  if (profile?.role === 'therapist') {
+    redirect('/therapist-dashboard')
+  }
 
   const { data: emergencyContact } = await supabase
     .from('emergency_contacts')

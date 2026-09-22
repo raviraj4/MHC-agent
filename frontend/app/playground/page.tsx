@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { IoSparkles } from 'react-icons/io5'
 import { HiOutlineMusicNote, HiOutlineUsers, HiOutlineLightBulb, HiChevronRight } from 'react-icons/hi'
 import AppLayout from '@/components/layouts/AppLayout'
 import { createClient } from '@/utils/supabase/server'
@@ -15,12 +14,12 @@ type PlaygroundModule = {
 
 const modules: PlaygroundModule[] = [
   {
-    title: 'Role-Playing: Consolation Trainer',
+    title: 'Role-Playing: Role-Play Trainer',
     description:
       'Practice responding to others in difficult emotional situations with AI-driven roleplay.',
     tag: 'Interactive',
     icon: HiOutlineUsers,
-    href: '/playground/consolation-trainer',
+    href: '/playground/role-play-trainer',
     color: 'amber',
   },
   {
@@ -68,7 +67,7 @@ export default async function PlaygroundPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)] text-amber-500">Practice Hub</p>
             <h1 className="mt-2 flex items-center gap-2 text-3xl font-bold tracking-tight text-[var(--foreground)]">
               CBT Playground
-              <IoSparkles className="text-amber-500" />
+              <HiOutlineUsers className="text-amber-500" />
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted-foreground)]">
               Build your emotional intelligence through interactive exercises. Choose a module below to begin your practice session.

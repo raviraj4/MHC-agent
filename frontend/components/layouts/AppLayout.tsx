@@ -2,13 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CgProfile } from 'react-icons/cg'
 import { HiOutlineMenuAlt2, HiOutlineChatAlt2, HiOutlineHome } from 'react-icons/hi'
 import { IoClose, IoSparkles } from 'react-icons/io5'
 import { HiOutlineBookOpen } from 'react-icons/hi2'
 import { BirdIcon } from 'lucide-react'
 import ChatSidebar from './ChatSidebar'
+import { GiTalk } from 'react-icons/gi'
+import { useAuth } from '@/components/providers/AuthProvider'
+import { createClient } from '@/utils/supabase/client'
+import NotificationBell from '@/components/ui/NotificationBell'
 
 export default function AppLayout({
   children,
@@ -19,17 +23,40 @@ export default function AppLayout({
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [role, setRole] = useState<'admin' | 'therapist' | 'user' | null>(null)
+  const { user } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    if (!user) {
+      setRole(null)
+      return
+    }
+
+    const loadRole = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      setRole(data?.role === 'admin' || data?.role === 'therapist' || data?.role === 'user' ? data.role : null)
+    }
+
+    loadRole()
+  }, [supabase, user])
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
     { href: '/chat', label: 'Chat with ASA', icon: HiOutlineChatAlt2 },
     { href: '/journal', label: 'Journal', icon: HiOutlineBookOpen },
     { href: '/playground', label: 'CBT Playground', icon: IoSparkles },
+    { href: '/explore', label: 'Talk to a Pro', icon: GiTalk },
   ]
 
   return (
-    <div className="ambient-mesh min-h-screen bg-(--background) text-(--foreground)">
-      <div className="relative z-[1] flex h-screen">
+    <div className="ambient-mesh h-dvh overflow-hidden bg-(--background) text-(--foreground)">
+      <div className="relative z-[1] flex h-full min-h-0">
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
@@ -44,7 +71,7 @@ export default function AppLayout({
           glass-strong
           transform transition-transform duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:relative lg:translate-x-0
+          lg:relative lg:h-full lg:translate-x-0
         `}>
           {/* Brand */}
           <div className="flex items-center justify-between px-5 py-5">
@@ -92,7 +119,7 @@ export default function AppLayout({
           <div className="mx-5 mt-5 h-px bg-(--border)" />
           
           {/* Recent Chats section extracted to component */}
-          <div className="flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden">
             <ChatSidebar />
           </div>
 
@@ -107,7 +134,7 @@ export default function AppLayout({
         </aside>
 
         {/* ── Main area ── */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Top bar */}
           <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-3">
@@ -128,6 +155,23 @@ export default function AppLayout({
             </div>
 
             <div className="flex items-center gap-2">
+              {role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-[var(--primary)] transition-colors hover:bg-(--muted)"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+              {role === 'therapist' && (
+                <Link
+                  href="/therapist-dashboard"
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-[var(--primary)] transition-colors hover:bg-(--muted)"
+                >
+                  Therapist Dashboard
+                </Link>
+              )}
+              <NotificationBell />
               <span className="hidden max-w-[180px] truncate text-xs text-(--muted-foreground) md:block">
                 {userEmail}
               </span>
@@ -141,7 +185,7 @@ export default function AppLayout({
           </header>
 
           {/* Content */}
-          <main className="flex-1 overflow-hidden">
+          <main className="min-h-0 flex-1 overflow-hidden">
             {children}
           </main>
         </div>

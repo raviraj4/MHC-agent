@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 import httpx
 from typing import List, Dict, Any, Optional
 from .llm_provider import (
@@ -7,6 +8,19 @@ from .llm_provider import (
     ProviderResponse,
     ProviderNotAvailableException,
     ProviderInvalidResponseException,
+)
+from .monitoring.metrics import (
+    OLLAMA_AVAILABLE,
+    OLLAMA_CHAT_DURATION,
+    OLLAMA_CHAT_REQUESTS,
+    OLLAMA_EMBED_DURATION,
+    OLLAMA_EMBED_REQUESTS,
+    OLLAMA_EVAL_DURATION,
+    OLLAMA_INPUT_TOKENS,
+    OLLAMA_LOAD_DURATION,
+    OLLAMA_OUTPUT_TOKENS,
+    OLLAMA_PROMPT_EVAL_DURATION,
+    observe_seconds,
 )
 
 logger = logging.getLogger(__name__)
@@ -141,6 +155,7 @@ class OllamaProvider(LLMProvider):
         if not self.is_initialized or not self.client:
             raise ProviderNotAvailableException("Ollama provider not initialized")
         
+        started_at = time.perf_counter()
         try:
             # Build messages with system prompt
             messages_with_profile = self._build_messages_with_profile(messages)
@@ -172,23 +187,45 @@ class OllamaProvider(LLMProvider):
             resp_json = response.json()
             message = resp_json.get("message", {})
             content = message.get("content", "").strip()
+            model = resp_json.get("model", self.model)
+
+            OLLAMA_CHAT_REQUESTS.labels(model=model, status="success").inc()
+            OLLAMA_CHAT_DURATION.labels(model=model).observe(time.perf_counter() - started_at)
+
+            prompt_tokens = resp_json.get("prompt_eval_count")
+            output_tokens = resp_json.get("eval_count")
+            if isinstance(prompt_tokens, (int, float)):
+                OLLAMA_INPUT_TOKENS.labels(model=model).inc(prompt_tokens)
+            if isinstance(output_tokens, (int, float)):
+                OLLAMA_OUTPUT_TOKENS.labels(model=model).inc(output_tokens)
+            observe_seconds(resp_json.get("prompt_eval_duration"), OLLAMA_PROMPT_EVAL_DURATION, model)
+            observe_seconds(resp_json.get("eval_duration"), OLLAMA_EVAL_DURATION, model)
+            observe_seconds(resp_json.get("load_duration"), OLLAMA_LOAD_DURATION, model)
             
             return ProviderResponse(
                 content=content or "I'm here if you'd like to talk.",
-                model_name=self.model,
+                model_name=model,
                 provider_name="ollama",
-                metadata=resp_json.get("id"),
+                input_tokens=prompt_tokens if isinstance(prompt_tokens, int) else None,
+                output_tokens=output_tokens if isinstance(output_tokens, int) else None,
+                metadata=resp_json,
             )
         
         except httpx.TimeoutException:
+            OLLAMA_CHAT_REQUESTS.labels(model=self.model, status="timeout").inc()
+            OLLAMA_CHAT_DURATION.labels(model=self.model).observe(time.perf_counter() - started_at)
             logger.error("Ollama request timeout")
             raise ProviderNotAvailableException("Ollama request timeout")
         
         except httpx.ConnectError as e:
+            OLLAMA_CHAT_REQUESTS.labels(model=self.model, status="connection_error").inc()
+            OLLAMA_CHAT_DURATION.labels(model=self.model).observe(time.perf_counter() - started_at)
             logger.error(f"Ollama connection error: {e}")
             raise ProviderNotAvailableException(f"Ollama connection error: {e}")
         
         except Exception as e:
+            OLLAMA_CHAT_REQUESTS.labels(model=self.model, status="error").inc()
+            OLLAMA_CHAT_DURATION.labels(model=self.model).observe(time.perf_counter() - started_at)
             logger.error(f"Unexpected Ollama error: {e}")
             raise ProviderInvalidResponseException(f"Ollama error: {e}")
     
@@ -201,10 +238,10 @@ class OllamaProvider(LLMProvider):
         if not self.is_initialized or not self.client:
             raise ProviderNotAvailableException("Ollama provider not initialized")
 
+        started_at = time.perf_counter()
+        embed_model = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
         try:
             # Use a dedicated embedding model if available, else use current model
-            embed_model = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-            
             payload = {
                 "model": embed_model,
                 "prompt": text,
@@ -231,9 +268,13 @@ class OllamaProvider(LLMProvider):
                 )
             
             resp_json = response.json()
+            OLLAMA_EMBED_REQUESTS.labels(model=payload["model"], status="success").inc()
+            OLLAMA_EMBED_DURATION.labels(model=payload["model"]).observe(time.perf_counter() - started_at)
             return resp_json.get("embedding", [])
             
         except Exception as e:
+            OLLAMA_EMBED_REQUESTS.labels(model=embed_model, status="error").inc()
+            OLLAMA_EMBED_DURATION.labels(model=embed_model).observe(time.perf_counter() - started_at)
             logger.error(f"Ollama embedding failed: {e}")
             raise ProviderInvalidResponseException(f"Ollama embedding failed: {e}")
 
@@ -277,9 +318,11 @@ class OllamaProvider(LLMProvider):
                 target_model in m.get("model", "").split(':')[0]
                 for m in models
             )
+            OLLAMA_AVAILABLE.labels(model=self.model).set(1)
             return True # If tags works, Ollama is up. Specific model check is extra.
         
         except Exception as e:
+            OLLAMA_AVAILABLE.labels(model=self.model).set(0)
             logger.debug(f"Ollama health check failed: {e}")
             return False
     

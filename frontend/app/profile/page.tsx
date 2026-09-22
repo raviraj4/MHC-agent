@@ -22,11 +22,11 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, user_name, onboarding_completed, preferences')
+    .select('full_name, user_name, onboarding_completed, preferences, role')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (!profile?.onboarding_completed) {
+  if (profile?.role === 'user' && !profile.onboarding_completed) {
     redirect('/start-conversation')
   }
 

@@ -53,6 +53,7 @@ export interface Profile {
   email?: string
   full_name?: string
   user_name?: string
+  role?: 'admin' | 'therapist' | 'user'
   onboarding_completed?: boolean
   preferences?: ProfilePreferences | null
   created_at?: string
