@@ -3,6 +3,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle'
 import LogoutButton from '@/app/auth/LogoutButton'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import EmergencyContactsEditor, { type EmergencyContactRecord } from '@/components/profile/EmergencyContactsEditor'
 
 interface Preferences {
   goals?: string[]
@@ -26,6 +27,13 @@ export default async function ProfilePage() {
     .eq('id', user.id)
     .maybeSingle()
 
+  const { data: emergencyContacts } = await supabase
+    .from('emergency_contacts')
+    .select('id, name, relationship, phone, email, consent, is_primary')
+    .eq('user_id', user.id)
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: true })
+
   if (profile?.role === 'user' && !profile.onboarding_completed) {
     redirect('/start-conversation')
   }
@@ -33,7 +41,7 @@ export default async function ProfilePage() {
   const preferences = (profile?.preferences as Preferences | null) || undefined
   const goals = preferences?.goals || []
   const activities = preferences?.activities || []
-  const preferredName = profile.full_name || profile.user_name || 'Friend'
+  const preferredName = profile?.full_name || profile?.user_name || 'Friend'
   const cardClasses = 'rounded-2xl bg-[var(--card)] p-6 ring-1 ring-[var(--border)] transition-all duration-200'
   const labelClasses = 'text-[var(--muted-foreground)] uppercase tracking-widest text-[10px] font-medium'
   const chipClasses = 'rounded-full bg-[var(--muted)] px-3 py-1.5 text-xs text-[var(--foreground)]'
@@ -82,6 +90,10 @@ export default async function ProfilePage() {
                   </span>
                 ))}
               </div>
+            </div>
+
+            <div className={cardClasses}>
+              <EmergencyContactsEditor initialContacts={(emergencyContacts || []) as EmergencyContactRecord[]} />
             </div>
 
             <div>

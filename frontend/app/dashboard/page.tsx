@@ -4,6 +4,7 @@ import { HiOutlineChatBubbleOvalLeft } from 'react-icons/hi2'
 import { IoSparkles } from 'react-icons/io5'
 import AppLayout from '@/components/layouts/AppLayout'
 import DashboardMoodSection from '@/components/mood/DashboardMoodSection'
+import SOSButton from '@/components/dashboard/SOSButton'
 import { createClient } from '@/utils/supabase/server'
 import type { MoodCheckin } from '@/types'
 
@@ -149,6 +150,8 @@ export default async function DashboardPage() {
               </div>
             </Link>
           </div>
+
+          <SOSButton />
 
           {/* Mood check-in + graph */}
           <DashboardMoodSection

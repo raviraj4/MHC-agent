@@ -271,6 +271,196 @@ html { scroll-behavior: smooth; }
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
+/* Role-play trainer chat surfaces */
+.trainer-chat-canvas {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 0 0, rgba(100, 116, 139, 0.12) 1px, transparent 1.5px),
+    linear-gradient(135deg, rgba(255,255,255,0.18), transparent 45%);
+  background-size: 32px 32px, 100% 100%;
+}
+.trainer-message-bubble {
+  position: relative;
+  border-radius: 1.1rem;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
+}
+.trainer-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: 0.5rem;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+.trainer-message-coach {
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08);
+}
+.trainer-message-user {
+  box-shadow: 0 3px 12px rgba(180, 83, 9, 0.18);
+}
+.coach-review-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.09), var(--card) 45%);
+  box-shadow: 0 8px 22px rgba(120, 53, 15, 0.07);
+}
+.coach-review-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.16);
+}
+.coach-review-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: #d97706;
+  border-radius: 0.65rem;
+  background: rgba(245, 158, 11, 0.14);
+}
+.coach-review-content {
+  padding-top: 0.95rem;
+  max-width: 68ch;
+}
+.coach-review-content > div + div {
+  margin-top: 0.65rem;
+}
+.coach-review-content h4 {
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.coach-review-content h4:first-child {
+  margin-top: 0;
+}
+.coach-review-content strong {
+  font-weight: 700;
+}
+.coach-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(245, 158, 11, 0.16);
+}
+.coach-review-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 0.8rem;
+  background: rgba(239, 68, 68, 0.07);
+  color: #b91c1c;
+  font-size: 0.78rem;
+}
+
+/* SOS emergency control */
+@keyframes sos-panel-glow {
+  0%, 100% { opacity: 0.45; transform: scale(0.98); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+@keyframes sos-pulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.42), inset 0 0 16px rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.78), 0 0 52px rgba(239, 68, 68, 0.2), inset 0 0 24px rgba(239, 68, 68, 0.38); }
+}
+.sos-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  overflow: hidden;
+  min-height: 168px;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 1.5rem;
+  background: linear-gradient(110deg, rgba(127, 29, 29, 0.1), var(--card) 42%, var(--card));
+  box-shadow: 0 12px 30px rgba(127, 29, 29, 0.06);
+}
+.sos-panel-glow {
+  position: absolute;
+  top: -80px;
+  left: -40px;
+  width: 260px;
+  height: 260px;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.16), transparent 68%);
+  animation: sos-panel-glow 4s ease-in-out infinite;
+}
+.sos-alert-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  border-radius: 13px;
+  background: #7f1d1d;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.22);
+}
+.sos-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.85);
+}
+.sos-button { animation: sos-pulse 2s ease-in-out infinite; }
+.sos-button-active { animation: sos-pulse 0.55s ease-in-out infinite; }
+.sos-button-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%);
+}
+.sos-button-inner {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(252, 165, 165, 0.28);
+  border-radius: 15px;
+}
+.sos-press-step {
+  width: 6px;
+  height: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-radius: 50%;
+}
+.sos-press-step-active {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sos-panel-glow, .sos-button, .sos-button-active { animation: none; }
+}
+@media (max-width: 639px) {
+  .sos-panel { align-items: stretch; flex-direction: column; text-align: center; }
+  .sos-copy { justify-content: center; text-align: left; }
+  .sos-panel > div:last-child { align-items: center; }
+}
+
 /* Gradient text utility */
 .text-gradient {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
