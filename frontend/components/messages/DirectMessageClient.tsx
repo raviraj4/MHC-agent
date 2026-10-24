@@ -114,8 +114,8 @@ export function DirectMessageClient({ conversationId }: { conversationId: string
   }
 
   return (
-    <section className="flex h-full flex-col bg-[var(--background)]">
-      <header className="border-b border-[var(--border)] bg-[var(--card)] px-5 py-4">
+    <section className="flex h-full flex-col border-l border-[var(--border)] bg-[var(--background)]">
+      <header className="border-t border-b border-[var(--border)] bg-[var(--background)] px-5 py-4 shadow-sm shadow-slate-300/10 dark:shadow-black/10">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">Direct message</p>
         <h1 className="mt-1 text-xl font-semibold">Therapist conversation</h1>
       </header>

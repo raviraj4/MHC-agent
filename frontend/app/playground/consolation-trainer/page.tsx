@@ -24,8 +24,6 @@ type Scenario = {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
 const TAG_QUERY_MAP: Record<string, string> = {
     'Grief': 'loss of a parent grief funeral support',
     'Work Conflict': 'coworker conflict divorce stress workplace burnout',
@@ -104,6 +102,7 @@ export default function RolePlayTrainer() {
     const [isLoading, setIsLoading] = useState(false)
     const [isFinished, setIsFinished] = useState(false)
     const [review, setReview] = useState<string | null>(null)
+    const [reviewError, setReviewError] = useState<string | null>(null)
     const [customQuery, setCustomQuery] = useState('')
     const [isSearching, setIsSearching] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -117,6 +116,7 @@ export default function RolePlayTrainer() {
     const startSession = (scenario: Scenario) => {
         setIsFinished(false)
         setReview(null)
+        setReviewError(null)
         setSelectedScenario(scenario)
         const systemPrompt = (scenario.initialSystem || scenario.initial_system_prompt)
         const welcome = scenario.welcome || scenario.welcome_message || 'Hey, can we talk for a minute?'
@@ -171,19 +171,21 @@ export default function RolePlayTrainer() {
         setMessages([])
         setIsFinished(false)
         setReview(null)
+        setReviewError(null)
     }
 
-    const endSessionEarly = async () => {
-        if (messages.length < 3 || isLoading || isFinished) return
+    const endSessionEarly = async (force = false, transcriptMessages = messages) => {
+        if (transcriptMessages.length < 3 || isLoading || (isFinished && !force)) return
         
         setIsFinished(true)
         setIsLoading(true)
+        setReviewError(null)
 
         try {
             const userName = session?.user?.email?.split('@')[0] ?? 'User'
             const critiqueGoal = selectedScenario?.critiqueFocus || selectedScenario?.critique_focus
             
-            const transcript = messages
+            const transcript = transcriptMessages
                 .filter((message) => message.role !== 'system')
                 .map((message, index) => {
                     const speaker = message.role === 'user' ? 'TRAINEE' : 'ROLEPLAY_PARTNER'
@@ -238,12 +240,14 @@ REVIEW REQUIREMENTS
                 })
             })
 
-            if (res.ok) {
-                const data = await res.json()
-                setReview(data.message.content)
-            }
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.detail || 'The coach review could not be generated.')
+            const content = data.message?.content
+            if (!content) throw new Error('The coach returned an empty review.')
+            setReview(content)
         } catch (error) {
             console.error('Review generation error:', error)
+            setReviewError(error instanceof Error ? error.message : 'The coach review could not be generated.')
         } finally {
             setIsLoading(false)
         }
@@ -252,8 +256,7 @@ REVIEW REQUIREMENTS
     const sendMessage = async () => {
         if (!input.trim() || isLoading || isFinished) return
 
-        const lockedScenarioId = selectedScenario?.id
-        const canonicalScenarioId = lockedScenarioId && UUID_RE.test(lockedScenarioId) ? lockedScenarioId : undefined
+        const canonicalScenarioId = selectedScenario?.id
 
         const userMsg: Message = { role: 'user', content: input.trim() }
         const newMessages = [...messages, userMsg]
@@ -293,12 +296,13 @@ REVIEW REQUIREMENTS
                 
                 if (content.includes('###SESSION_COMPLETE###')) {
                     setIsFinished(true)
-                    setMessages(prev => [...prev, { 
+                    const completedMessage = {
                         role: 'assistant', 
                         content: content.replace('###SESSION_COMPLETE###', '').trim() 
-                    }])
+                    } as Message
+                    setMessages(prev => [...prev, completedMessage])
                     // Trigger review automatically since the model ended the session
-                    setTimeout(endSessionEarly, 100)
+                    setTimeout(() => endSessionEarly(true, [...newMessages, completedMessage]), 100)
                 } else {
                     setMessages(prev => [...prev, { 
                         role: 'assistant', 
@@ -434,7 +438,7 @@ REVIEW REQUIREMENTS
                 <div className="flex items-center gap-2">
                     {!isFinished && messages.length >= 3 && (
                         <button 
-                            onClick={endSessionEarly}
+                            onClick={() => endSessionEarly()}
                             className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all border border-red-500/20"
                         >
                             <XCircle className="w-4 h-4" />
@@ -452,14 +456,14 @@ REVIEW REQUIREMENTS
             </header>
 
             {/* Session Chat */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 max-w-3xl mx-auto w-full scroll-smooth">
+            <div className="trainer-chat-canvas flex-1 overflow-y-auto p-4 space-y-6 max-w-3xl mx-auto w-full scroll-smooth">
                 {messages.filter(m => m.role !== 'system').map((m, i) => (
                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                        <div className={`
-                            max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all
+                        {m.role !== 'user' && <div className="trainer-avatar" aria-hidden="true">C</div>}
+                        <div className={`trainer-message-bubble max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all
                             ${m.role === 'user' 
-                                ? 'bg-amber-600 text-white font-medium rounded-tr-none' 
-                                : 'bg-[var(--card)] border border-[var(--border)] rounded-tl-none'}
+                                ? 'trainer-message-user bg-amber-600 text-white font-medium rounded-tr-none'
+                                : 'trainer-message-coach bg-[var(--card)] border border-[var(--border)] rounded-tl-none'}
                         `}>
                             <FormattedText text={m.content} />
                         </div>
@@ -468,20 +472,20 @@ REVIEW REQUIREMENTS
                 
                 {review && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
-                        <div className="bg-amber-500/5 border-2 border-amber-500/20 rounded-2xl p-6 space-y-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-5">
-                                <Users className="w-24 h-24 text-amber-500" />
-                            </div>
-                            <div className="flex items-center gap-3 text-amber-600">
-                                <div className="p-2 rounded-lg bg-amber-500/10">
+                        <div className="coach-review-card">
+                            <div className="coach-review-heading">
+                                <div className="coach-review-icon">
                                     <Info className="w-5 h-5" />
                                 </div>
-                                <h3 className="font-bold text-lg tracking-tight">Coach Feedback</h3>
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600/70">Session review</p>
+                                    <h3 className="font-bold tracking-tight text-[var(--foreground)]">Coach feedback</h3>
+                                </div>
                             </div>
-                            <div className="text-sm leading-relaxed text-[var(--foreground)] italic border-l-2 border-amber-500/30 pl-4 py-1">
+                            <div className="coach-review-content text-sm leading-relaxed text-[var(--foreground)]">
                                 <FormattedText text={review} />
                             </div>
-                            <div className="pt-2 flex justify-end">
+                            <div className="coach-review-actions">
                                 <button 
                                     onClick={resetSession}
                                     className="px-4 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-500/10"
@@ -490,6 +494,13 @@ REVIEW REQUIREMENTS
                                 </button>
                             </div>
                         </div>
+                    </div>
+                )}
+                {reviewError && (
+                    <div className="coach-review-error" role="alert">
+                        <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>{reviewError} You can try ending the session again.</span>
+                        <button type="button" onClick={() => endSessionEarly(true)} className="ml-auto shrink-0 font-semibold underline underline-offset-2">Retry</button>
                     </div>
                 )}
 

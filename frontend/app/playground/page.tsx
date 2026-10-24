@@ -22,20 +22,6 @@ const modules: PlaygroundModule[] = [
     href: '/playground/role-play-trainer',
     color: 'amber',
   },
-  {
-    title: 'Music therapy',
-    description:
-      'Use curated sound prompts and reflection cues to regulate emotions and lower stress.',
-    tag: 'Static preview',
-    icon: HiOutlineMusicNote,
-  },
-  {
-    title: 'Thought reframing',
-    description:
-      'Spot unhelpful thoughts and rewrite them with balanced alternatives using CBT patterns.',
-    tag: 'Static preview',
-    icon: HiOutlineLightBulb,
-  },
 ]
 
 export default async function PlaygroundPage() {

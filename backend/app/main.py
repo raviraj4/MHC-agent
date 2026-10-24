@@ -29,6 +29,10 @@ load_dotenv(dotenv_path=env_path)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 
 @app.get("/metrics", include_in_schema=False)
@@ -65,7 +69,8 @@ def get_admin_supabase() -> Client:
 # CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Your Next.js app
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -362,7 +367,7 @@ async def retrieve_and_ground_scenario(
     try:
         scenario_db = admin_supabase or supabase
         # 0. Scenario lock: if scenario id is provided, pin to that scenario for the session.
-        if scenario_id_hint:
+        if scenario_id_hint and UUID_PATTERN.fullmatch(scenario_id_hint):
             locked = scenario_db.table("scenarios").select(
                 "id,title,description,initial_system_prompt,critique_focus"
             ).eq("id", scenario_id_hint).limit(1).execute()
@@ -378,7 +383,7 @@ async def retrieve_and_ground_scenario(
                 )
             raise ValueError(f"Locked scenario not found for id: {scenario_id_hint}")
 
-        # 0b. Fallback lock by title when id is unavailable (e.g. locally seeded scenario cards).
+        # 0b. Fallback lock by title when the client uses a local catalog id.
         if query_hint:
             title_locked = scenario_db.table("scenarios").select(
                 "id,title,description,initial_system_prompt,critique_focus"
@@ -393,6 +398,10 @@ async def retrieve_and_ground_scenario(
                     critique_focus=selected.get("critique_focus"),
                     retrieval_score=0.99
                 )
+
+            # A locked session must not switch to a different topic just because
+            # the latest user turn contains new vocabulary.
+            raise ValueError(f"Locked scenario not found for title: {query_hint}")
 
         # Compose retrieval query: combine user message with hint if available
         if query_hint:
@@ -481,7 +490,9 @@ Your Focus:
 Initial Approach:
 {scenario_context.initial_system_prompt or 'Engage authentically with the person.'}
 
-Remember: Stay true to this scenario. Respond authentically as the persona, providing support aligned with the scenario's critique focus."""
+Topic lock: Stay inside this scenario for the entire session. Never switch to another scenario, invent a different relationship, or follow an unrelated topic as a new premise. If the trainee goes off-topic, briefly acknowledge it in character and steer back to the current situation.
+
+Response style: Stay true to this scenario and respond authentically as the persona. Reply like a real person in a chat: use 1-3 short sentences and stay under 60 words. Reveal only what the persona would share at this moment; do not summarize the entire situation, list every feeling, or resolve the scene in one turn. Leave room for the trainee to respond. Avoid long paragraphs unless the persona is specifically making a deliberate explanation."""
     
     # Prepare output messages: inject scenario context as system message
     grounded_messages = []
@@ -929,6 +940,75 @@ async def send_direct_message(conversation_id: str, payload: DirectMessageReques
     return attach_sender_to_direct_message(message, participant_profiles)
 
 
+@app.post("/sos")
+async def send_sos_alert(authorization: Optional[str] = Header(None)):
+    """Send a templated emergency alert to the user's most recent therapist."""
+    user = await get_authenticated_user(authorization)
+    db = get_admin_supabase()
+
+    profile_result = db.table("profiles").select("full_name, user_name, role").eq(
+        "id", user.id
+    ).limit(1).execute()
+    profile = profile_result.data[0] if profile_result.data else {}
+    if profile.get("role") not in (None, "user"):
+        raise HTTPException(status_code=403, detail="SOS alerts are only available to user accounts")
+
+    contacts = db.table("emergency_contacts").select(
+        "name, relationship, phone, email"
+    ).eq("user_id", user.id).eq("consent", True).order("is_primary", desc=True).execute().data or []
+    if not contacts:
+        raise HTTPException(status_code=400, detail="No consented emergency contact is available. Update your emergency contact details first.")
+
+    connection_result = db.table("therapist_connections").select(
+        "id, therapist_id"
+    ).eq("user_id", user.id).order("created_at", desc=True).limit(1).execute()
+    if not connection_result.data:
+        raise HTTPException(status_code=400, detail="Connect with a therapist before sending an SOS alert.")
+    connection = connection_result.data[0]
+
+    conversation_result = db.table("direct_conversations").select("id").eq(
+        "connection_id", connection["id"]
+    ).limit(1).execute()
+    if not conversation_result.data:
+        raise HTTPException(status_code=404, detail="Your therapist conversation could not be found.")
+    conversation_id = conversation_result.data[0]["id"]
+
+    sender_name = profile.get("full_name") or profile.get("user_name") or user.email or "A user"
+    contact_lines = []
+    for contact in contacts:
+        relationship = f" ({contact['relationship']})" if contact.get("relationship") else ""
+        email = f"\nEmail: {contact['email']}" if contact.get("email") else ""
+        contact_lines.append(
+            f"- {contact.get('name', 'Emergency contact')}{relationship}\n"
+            f"  Phone: {contact.get('phone', 'Not provided')}{email}"
+        )
+    body = (
+        "SOS ALERT: I need urgent support. Please contact me as soon as possible.\n\n"
+        f"User: {sender_name}\n"
+        f"Email: {user.email or 'Not provided'}\n\n"
+        "Emergency contact details:\n"
+        + "\n".join(contact_lines)
+    )
+
+    message = db.table("direct_messages").insert({
+        "conversation_id": conversation_id, "sender_id": user.id, "body": body,
+    }).execute().data[0]
+    now = datetime.now(timezone.utc).isoformat()
+    db.table("direct_conversations").update({"last_message_at": now}).eq("id", conversation_id).execute()
+    db.table("notifications").insert({
+        "recipient_id": connection["therapist_id"],
+        "actor_id": user.id,
+        # The notifications table currently permits new_direct_message and
+        # new_connection; keep SOS alerts visible through the existing message kind.
+        "kind": "new_direct_message",
+        "title": "SOS alert from a user",
+        "body": "A user has requested urgent support. Open the conversation to view the emergency details.",
+        "conversation_id": conversation_id,
+        "message_id": message["id"],
+    }).execute()
+    return {"success": True, "conversation_id": conversation_id, "message_id": message["id"]}
+
+
 @app.get("/notifications")
 async def list_notifications(authorization: Optional[str] = Header(None)):
     user_id = await validate_user_token(authorization)
@@ -1256,4 +1336,3 @@ async def health():
     
     status = await provider_factory.health_check()
     return status
-
