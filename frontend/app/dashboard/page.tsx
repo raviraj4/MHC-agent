@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { HiOutlineChatBubbleOvalLeft } from 'react-icons/hi2'
 import { RiMentalHealthLine } from "react-icons/ri";
 import { IoJournal } from "react-icons/io5";
+import { IoMusicalNotes, IoSparkles } from 'react-icons/io5';
 import { useEffect, useMemo, useState } from 'react'
 import { MessageCircle, BookOpen, Wind, ArrowUpRight } from 'lucide-react'
 import AppLayout from '@/components/layouts/AppLayout'
@@ -84,7 +85,8 @@ export default async function DashboardPage() {
           </div>
 
           {/* Action cards */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2">
+
             {/* Chat Card */}
             <Link
               href="/chat"
@@ -108,6 +110,29 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
+            {/* Music Therapy Card */}
+            <Link
+              href="/music-therapy"
+              className="animate-fade-in-up stagger-3 group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 p-6 shadow-lg shadow-violet-500/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/25"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+              <div className="relative">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-sm">
+                  <IoMusicalNotes className="text-2xl" />
+                </div>
+                <div className="mt-5">
+                  <h2 className="text-lg font-bold text-white">Music Therapy</h2>
+                  <p className="mt-1.5 text-sm leading-relaxed text-white/80">
+                    Unwind with mood-based soundscapes and guided 10-minute listening sessions.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-white">
+                  Start listening
+                  <span className="transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden>→</span>
+                </div>
+              </div>
+            </Link>
+            
             {/* Journal Card */}
             <Link
               href="/journal"
