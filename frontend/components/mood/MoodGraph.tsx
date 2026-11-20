@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import type { MoodCheckin } from '@/types'
+import { SiGoogleanalytics } from "react-icons/si";
 
 const MOOD_EMOJIS = ['', '😞', '😔', '😐', '🙂', '😊']
 const LABEL_MAP: Record<string, string> = {
@@ -45,7 +46,9 @@ export default function MoodGraph({ checkins, month, year }: Props) {
           {monthName} mood trends
         </p>
         <div className="mt-6 flex flex-col items-center justify-center py-6 text-center">
-          <span className="text-4xl mb-3">📊</span>
+          <span className="text-4xl mb-3">
+            <SiGoogleanalytics />
+          </span>
           <p className="text-sm font-medium text-[var(--foreground)]">
             More insights when you log mood regularly
           </p>

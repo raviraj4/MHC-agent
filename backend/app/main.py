@@ -959,9 +959,11 @@ async def send_sos_alert(authorization: Optional[str] = Header(None)):
     if not contacts:
         raise HTTPException(status_code=400, detail="No consented emergency contact is available. Update your emergency contact details first.")
 
+
     connection_result = db.table("therapist_connections").select(
         "id, therapist_id"
     ).eq("user_id", user.id).order("created_at", desc=True).limit(1).execute()
+    
     if not connection_result.data:
         raise HTTPException(status_code=400, detail="Connect with a therapist before sending an SOS alert.")
     connection = connection_result.data[0]
