@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { HiOutlineChatBubbleOvalLeft } from 'react-icons/hi2'
-import { IoSparkles } from 'react-icons/io5'
+import { RiMentalHealthLine } from "react-icons/ri";
+import { IoJournal } from "react-icons/io5";
+import { useEffect, useMemo, useState } from 'react'
+import { MessageCircle, BookOpen, Wind, ArrowUpRight } from 'lucide-react'
 import AppLayout from '@/components/layouts/AppLayout'
 import DashboardMoodSection from '@/components/mood/DashboardMoodSection'
 import SOSButton from '@/components/dashboard/SOSButton'
@@ -69,6 +72,7 @@ export default async function DashboardPage() {
       <section className="h-full overflow-y-auto px-4 py-8 lg:px-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-8">
           {/* Hero greeting */}
+         
           <div className="animate-fade-in-up py-2">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">{greeting}</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--foreground)]">
@@ -112,7 +116,7 @@ export default async function DashboardPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-[var(--secondary)]/[0.03] to-transparent" />
               <div className="relative">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted)] text-lg">
-                  📝
+                  <IoJournal className=""/>
                 </div>
                 <div className="mt-5">
                   <h2 className="text-lg font-bold text-[var(--foreground)]">Journal entry</h2>
@@ -135,7 +139,7 @@ export default async function DashboardPage() {
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
               <div className="relative">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-sm">
-                  <IoSparkles className="text-2xl" />
+                  <RiMentalHealthLine className="text-2xl" />
                 </div>
                 <div className="mt-5">
                   <h2 className="text-lg font-bold text-white">CBT Playground</h2>

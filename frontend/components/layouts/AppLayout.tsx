@@ -5,7 +5,9 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { CgProfile } from 'react-icons/cg'
 import { HiOutlineMenuAlt2, HiOutlineChatAlt2, HiOutlineHome } from 'react-icons/hi'
-import { IoClose, IoSparkles } from 'react-icons/io5'
+import { RiMentalHealthLine } from "react-icons/ri";
+
+import { IoClose } from 'react-icons/io5'
 import { HiOutlineBookOpen } from 'react-icons/hi2'
 import { BirdIcon } from 'lucide-react'
 import ChatSidebar from './ChatSidebar'
@@ -50,7 +52,7 @@ export default function AppLayout({
     { href: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
     { href: '/chat', label: 'Chat with ASA', icon: HiOutlineChatAlt2 },
     { href: '/journal', label: 'Journal', icon: HiOutlineBookOpen },
-    { href: '/playground', label: 'CBT Playground', icon: IoSparkles },
+    { href: '/playground', label: 'CBT Playground', icon: RiMentalHealthLine  },
     { href: '/explore', label: 'Talk to a Pro', icon: GiTalk },
   ]
 

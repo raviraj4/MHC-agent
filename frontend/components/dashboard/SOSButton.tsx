@@ -92,30 +92,30 @@ export default function SOSButton() {
 
   return (
     <section className="sos-panel animate-fade-in-up stagger-3">
-      <div className="sos-panel-glow" aria-hidden="true" />
-      <div className="sos-copy relative flex min-w-0 flex-1 items-start gap-4">
+      <div className="sos-panel-accent" aria-hidden="true" />
+      <div className="sos-copy relative flex min-w-0 flex-1 items-start gap-3.5">
         <div className="sos-alert-icon" aria-hidden="true">
           <AlertTriangle className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-600 dark:text-red-400">Emergency support</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sos-text)]">Emergency support</p>
             <span className="sos-status-dot" aria-hidden="true" />
           </div>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-[var(--foreground)]">SOS alert</h2>
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-[var(--foreground)]">Need urgent support?</h2>
           <p className="mt-1 max-w-xl text-sm leading-relaxed text-[var(--muted-foreground)]">
-            Need urgent help? Alert your therapist with your emergency contact details.
+            Quickly alert your therapist with your saved emergency contact details.
           </p>
           {status === 'sent' && (
-            <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600" role="status">
+            <p className="sos-feedback sos-feedback-success mt-2" role="status">
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Your therapist has been alerted.
             </p>
           )}
           {status === 'error' && (
-            <p className="mt-2 text-xs font-semibold text-red-600 dark:text-red-400" role="alert">
+            <p className="sos-feedback sos-feedback-error mt-2" role="alert">
               {error}
               {error.includes('emergency contact') && (
-                <> <Link href="/profile" className="underline underline-offset-2 hover:text-red-800 dark:hover:text-red-300">Open Profile</Link></>
+                <> <Link href="/profile" className="font-bold underline underline-offset-2">Open Profile</Link></>
               )}
             </p>
           )}
@@ -128,20 +128,22 @@ export default function SOSButton() {
           onClick={handlePress}
           disabled={status === 'sending'}
           aria-label="SOS: press three times quickly to alert your therapist"
-          className={`sos-button group relative flex h-[104px] w-[104px] flex-col items-center justify-center rounded-[22px] border-2 border-red-400/80 bg-[#3b0b12] text-red-100 transition-all duration-200 hover:scale-105 hover:border-red-300 focus-visible:outline-red-500 active:scale-95 disabled:cursor-wait disabled:opacity-80 ${isUrgent ? 'sos-button-active' : ''}`}
+          className={`sos-button group relative flex h-[104px] w-[104px] flex-col items-center justify-center transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-none active:scale-95 disabled:cursor-wait disabled:opacity-80 ${isUrgent ? 'sos-button-active' : ''}`}
         >
           <span className="sos-button-shine" aria-hidden="true" />
           <span className="sos-button-inner" aria-hidden="true" />
-          {status === 'sending' ? <Loader2 className="relative z-10 h-6 w-6 animate-spin" aria-hidden="true" /> : <AlertTriangle className="relative z-10 h-6 w-6" aria-hidden="true" />}
-          <span className="relative z-10 mt-1 text-base font-black tracking-[0.2em] text-red-100">SOS</span>
+          <span className="sos-button-content">
+            {status === 'sending' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <AlertTriangle className="h-5 w-5" aria-hidden="true" />}
+            <span className="mt-1 text-base font-black tracking-[0.22em]">SOS</span>
+          </span>
         </button>
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-red-600 dark:text-red-400" role="status">
+        <div className="sos-press-status mt-3" role="status">
           {status === 'arming' && [0, 1, 2].map((item) => (
             <span key={item} className={`sos-press-step ${item < pressCount ? 'sos-press-step-active' : ''}`} />
           ))}
           <span>{statusLabel}</span>
         </div>
-        {status === 'idle' && <p className="text-[10px] text-[var(--muted-foreground)]">Press 3 times quickly</p>}
+        {status === 'idle' && <p className="sos-hint">Press 3 times quickly</p>}
       </div>
     </section>
   )
