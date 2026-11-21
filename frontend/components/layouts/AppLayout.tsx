@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { CgProfile } from 'react-icons/cg'
@@ -9,7 +10,7 @@ import { RiMentalHealthLine } from "react-icons/ri";
 
 import { IoClose } from 'react-icons/io5'
 import { HiOutlineBookOpen } from 'react-icons/hi2'
-import { BirdIcon } from 'lucide-react'
+import { BirdIcon, Headphones } from 'lucide-react'
 import ChatSidebar from './ChatSidebar'
 import { GiTalk } from 'react-icons/gi'
 import { useAuth } from '@/components/providers/AuthProvider'
@@ -53,6 +54,7 @@ export default function AppLayout({
     { href: '/chat', label: 'Chat with ASA', icon: HiOutlineChatAlt2 },
     { href: '/journal', label: 'Journal', icon: HiOutlineBookOpen },
     { href: '/playground', label: 'CBT Playground', icon: RiMentalHealthLine  },
+    { href: '/music-therapy', label: 'Music Therapy', icon: Headphones },
     { href: '/explore', label: 'Talk to a Pro', icon: GiTalk },
   ]
 
